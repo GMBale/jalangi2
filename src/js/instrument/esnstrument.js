@@ -226,34 +226,36 @@ if (typeof J$ === 'undefined') {
     }
 
 
-    function printLineInfoAux(i, ast) {
+    function printLineInfoAux(i, ast, funName) {
         if (ast && ast.loc) {
-            iidSourceInfo[i] = [ast.loc.start.line, ast.loc.start.column + 1, ast.loc.end.line, ast.loc.end.column + 1];
+            const ret = [ast.loc.start.line, ast.loc.start.column + 1, ast.loc.end.line, ast.loc.end.column + 1];
+            if(funName) ret.push(funName.substring(funName.indexOf(".") + 1));
+            iidSourceInfo[i] = ret;
         }
     }
 
     // iid+2 is usually unallocated
     // we are using iid+2 for the sub-getField operation of a method call
     // see analysis.M
-    function printSpecialIidToLoc(ast0) {
-        printLineInfoAux(memIid + 2, ast0);
+    function printSpecialIidToLoc(ast0, funName) {
+        printLineInfoAux(memIid + 2, ast0, funName);
     }
 
-    function printIidToLoc(ast0) {
-        printLineInfoAux(memIid, ast0);
+    function printIidToLoc(ast0, funName) {
+        printLineInfoAux(memIid, ast0, funName);
     }
 
-    function printModIidToLoc(ast0) {
-        printLineInfoAux(memIid, ast0);
-        printLineInfoAux(memIid+2, ast0);
+    function printModIidToLoc(ast0, funName) {
+        printLineInfoAux(memIid, ast0, funName);
+        printLineInfoAux(memIid+2, ast0, funName);
     }
 
-    function printOpIidToLoc(ast0) {
-        printLineInfoAux(opIid, ast0);
+    function printOpIidToLoc(ast0, funName) {
+        printLineInfoAux(opIid, ast0, funName);
     }
 
-    function printCondIidToLoc(ast0) {
-        printLineInfoAux(condIid, ast0);
+    function printCondIidToLoc(ast0, funName) {
+        printLineInfoAux(condIid, ast0, funName);
     }
 
 // J$_i in expression context will replace it by an AST
@@ -350,7 +352,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapPutField(node, base, offset, rvalue, isComputed) {
         if (!Config.INSTR_PUTFIELD || Config.INSTR_PUTFIELD(isComputed ? null : offset.value, node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logPutFieldFunName);
             var ret = replaceInExpr(
                 logPutFieldFunName +
                 "(" + RP + "1, " + RP + "2, " + RP + "3, " + RP + "4," + (createBitPattern(isComputed, false)) + ")",
@@ -368,7 +370,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapModAssign(node, base, offset, op, rvalue, isComputed) {
         if (!Config.INSTR_PROPERTY_BINARY_ASSIGNMENT || Config.INSTR_PROPERTY_BINARY_ASSIGNMENT(op, node.computed ? null : offset.value, node)) {
-            printModIidToLoc(node);
+            printModIidToLoc(node, logAssignFunName);
             var ret = replaceInExpr(
                 logAssignFunName + "(" + RP + "1," + RP + "2," + RP + "3," + RP + "4," + (createBitPattern(isComputed)) + ")(" + RP + "5)",
                 getIid(),
@@ -385,7 +387,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapMethodCall(node, base, offset, isCtor, isComputed) {
-        printIidToLoc(node);
+        printIidToLoc(node, logMethodCallFunName);
         printSpecialIidToLoc(node.callee);
         var ret = replaceInExpr(
             logMethodCallFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + (createBitPattern(isCtor, isComputed)) + ")",
@@ -398,7 +400,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapFunCall(node, ast, isCtor) {
-        printIidToLoc(node);
+        printIidToLoc(node, logFunCallFunName);
         var ret = replaceInExpr(
             logFunCallFunName + "(" + RP + "1, " + RP + "2, " + (createBitPattern(isCtor)) + ")",
             getIid(),
@@ -410,7 +412,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapGetField(node, base, offset, isComputed) {
         if (!Config.INSTR_GETFIELD || Config.INSTR_GETFIELD(node.computed ? null : offset.value, node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logGetFieldFunName);
             var ret = replaceInExpr(
                 logGetFieldFunName + "(" + RP + "1, " + RP + "2, " + RP + "3," + (createBitPattern(isComputed,false, false)) + ")",
                 getIid(),
@@ -426,7 +428,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapRead(node, name, val, isReUseIid, isGlobal, isScriptLocal) {
         if (!Config.INSTR_READ || Config.INSTR_READ(name, node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logReadFunName);
             var ret = replaceInExpr(
                 logReadFunName + "(" + RP + "1, " + RP + "2, " + RP + "3," + (createBitPattern(isGlobal,isScriptLocal)) + ")",
                 isReUseIid ? getPrevIidNoInc() : getIid(),
@@ -475,7 +477,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapWrite(node, name, val, lhs, isGlobal, isScriptLocal, isDeclaration) {
         if (!Config.INSTR_WRITE || Config.INSTR_WRITE(name, node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logWriteFunName);
             var ret = replaceInExpr(
                 logWriteFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + RP + "4," + (createBitPattern(isGlobal,isScriptLocal,isDeclaration)) + ")",
                 getIid(),
@@ -492,7 +494,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapWriteWithUndefinedCheck(node, name, val, lhs) {
         if (!Config.INSTR_WRITE || Config.INSTR_WRITE(name, node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logWriteFunName);
 //        var ret2 = replaceInExpr(
 //            "("+logIFunName+"(typeof ("+name+") === 'undefined'? "+RP+"2 : "+RP+"3))",
 //            createIdentifierAst(name),
@@ -598,7 +600,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapLiteral(node, ast, funId) {
         if (!Config.INSTR_LITERAL || Config.INSTR_LITERAL(getLiteralValue(funId, node), node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logLitFunName);
             var hasGetterSetter = ifObjectExpressionHasGetterSetter(node);
 
             var ret;
@@ -636,7 +638,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapReturn(node, expr) {
         var lid = (expr === null) ? node : expr;
-        printIidToLoc(lid);
+        printIidToLoc(lid, logReturnFunName);
         if (expr === null) {
             expr = createIdentifierAst("undefined");
         }
@@ -650,7 +652,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapThrow(node, expr) {
-        printIidToLoc(expr);
+        printIidToLoc(expr, logThrowFunName);
         var ret = replaceInExpr(
             logThrowFunName + "(" + RP + "1, " + RP + "2)",
             getIid(),
@@ -664,7 +666,7 @@ if (typeof J$ === 'undefined') {
         if (!Config.INSTR_END_EXPRESSION || Config.INSTR_END_EXPRESSION(node)) {
 
             if (!ast || ast.type.indexOf("Expression") <= 0) return ast;
-            printIidToLoc(node);
+            printIidToLoc(node, logX1FunName);
             var ret = replaceInExpr(
                 logX1FunName + "(" + RP + "1," + RP + "2)", getIid(), ast);
             transferLoc(ret, node);
@@ -675,7 +677,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapHash(node, ast) {
-        printIidToLoc(node);
+        printIidToLoc(node, logHashFunName);
         var ret = replaceInExpr(
             logHashFunName + "(" + RP + "1, " + RP + "2)",
             getIid(),
@@ -686,7 +688,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapEvalArg(ast) {
-        printIidToLoc(ast);
+        printIidToLoc(ast, instrumentCodeFunName);
         var ret = replaceInExpr(
             instrumentCodeFunName + "(" + RP + "1, " + RP + "2, true)",
             ast,
@@ -698,7 +700,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapUnaryOp(node, argument, operator) {
         if (!Config.INSTR_UNARY || Config.INSTR_UNARY(operator, node)) {
-            printOpIidToLoc(node);
+            printOpIidToLoc(node, logUnaryOpFunName);
             var ret = replaceInExpr(
                 logUnaryOpFunName + "(" + RP + "1," + RP + "2," + RP + "3)",
                 getOpIid(),
@@ -714,7 +716,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapBinaryOp(node, left, right, operator, isComputed) {
         if (!Config.INSTR_BINARY || Config.INSTR_BINARY(operator, operator)) {
-            printOpIidToLoc(node);
+            printOpIidToLoc(node, logBinaryOpFunName);
             var ret = replaceInExpr(
                 logBinaryOpFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + RP + "4," + (createBitPattern(isComputed, false, false)) + ")",
                 getOpIid(),
@@ -731,7 +733,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapLogicalAnd(node, left, right) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("&&", node)) {
-            printCondIidToLoc(node);
+            printCondIidToLoc(node, logConditionalFunName);
             var ret = replaceInExpr(
                 logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + RP + "3:" + logLastFunName + "()",
                 getCondIid(),
@@ -747,7 +749,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapLogicalOr(node, left, right) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("||", node)) {
-            printCondIidToLoc(node);
+            printCondIidToLoc(node, logConditionalFunName);
             var ret = replaceInExpr(
                 logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + logLastFunName + "():" + RP + "3",
                 getCondIid(),
@@ -763,7 +765,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapSwitchDiscriminant(node, discriminant) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("switch", node)) {
-            printCondIidToLoc(node);
+            printCondIidToLoc(node, logSwitchLeftFunName);
             var ret = replaceInExpr(
                 logSwitchLeftFunName + "(" + RP + "1, " + RP + "2)",
                 getCondIid(),
@@ -778,7 +780,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapSwitchTest(node, test) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("switch", node)) {
-            printCondIidToLoc(node);
+            printCondIidToLoc(node, logSwitchRightFunName);
             var ret = replaceInExpr(
                 logSwitchRightFunName + "(" + RP + "1, " + RP + "2)",
                 getCondIid(),
@@ -793,7 +795,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapWith(node) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("with", node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logWithFunName);
             var ret = replaceInExpr(
                 logWithFunName + "(" + RP + "1, " + RP + "2)",
                 getIid(),
@@ -812,7 +814,7 @@ if (typeof J$ === 'undefined') {
         } // to handle for(;;) ;
 
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("other", node)) {
-            printCondIidToLoc(node);
+            printCondIidToLoc(node, logConditionalFunName);
             var ret = replaceInExpr(
                 logConditionalFunName + "(" + RP + "1, " + RP + "2)",
                 getCondIid(),
@@ -848,7 +850,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function createCallInitAsStatement(node, name, val, isArgumentSync, lhs, isCatchParam, isAssign) {
-        printIidToLoc(node);
+        printIidToLoc(node, logInitFunName);
         var ret;
 
         if (isAssign)
@@ -872,7 +874,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function createCallAsFunEnterStatement(node) {
-        printIidToLoc(node);
+        printIidToLoc(node, logFunctionEnterFunName);
         var ret = replaceInStatement(
             logFunctionEnterFunName + "(" + RP + "1,arguments.callee, this, arguments)",
             getIid()
@@ -882,7 +884,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function createCallAsScriptEnterStatement(node) {
-        printIidToLoc(node);
+        printIidToLoc(node, logScriptEntryFunName);
         var ret = replaceInStatement(logScriptEntryFunName + "(" + RP + "1," + RP + "2, " + RP + "3)",
             getIid(),
             createLiteralAst(instCodeFileName), createLiteralAst(origCodeFileName));
@@ -925,7 +927,7 @@ if (typeof J$ === 'undefined') {
 
 
     function wrapForInBody(node, body, name) {
-        printIidToLoc(node);
+        printIidToLoc(node, logInitFunName);
         var ret = replaceInStatement(
             "function n() { " + logInitFunName + "(" + RP + "1, '" + name + "'," + name + ","+createBitPattern(false, true, false)+");\n {" + RP + "2}}", getIid(), [body]);
 
@@ -946,9 +948,9 @@ if (typeof J$ === 'undefined') {
 
     function wrapScriptBodyWithTryCatch(node, body) {
         if (!Config.INSTR_TRY_CATCH_ARGUMENTS || Config.INSTR_TRY_CATCH_ARGUMENTS(node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logUncaughtExceptionFunName);
             var iid1 = getIid();
-            printIidToLoc(node);
+            printIidToLoc(node, logScriptExitFunName);
             var l = labelCounter++;
             var ret = replaceInStatement(
                 "function n() { jalangiLabel" + l + ": while(true) { try {" + RP + "1} catch(" + JALANGI_VAR +
@@ -971,9 +973,9 @@ if (typeof J$ === 'undefined') {
 
     function wrapFunBodyWithTryCatch(node, body) {
         if (!Config.INSTR_TRY_CATCH_ARGUMENTS || Config.INSTR_TRY_CATCH_ARGUMENTS(node)) {
-            printIidToLoc(node);
+            printIidToLoc(node, logUncaughtExceptionFunName);
             var iid1 = getIid();
-            printIidToLoc(node);
+            printIidToLoc(node, logFunctionReturnFunName);
             var l = labelCounter++;
             var ret = replaceInStatement(
                 "function n() { jalangiLabel" + l + ": while(true) { try {" + RP + "1} catch(" + JALANGI_VAR +
@@ -1230,7 +1232,7 @@ if (typeof J$ === 'undefined') {
     }
 
     function mergeBodies(node) {
-        printIidToLoc(node);
+        printIidToLoc(node, logSampleFunName);
         var ret = replaceInStatement(
             "function n() { if (!" + logSampleFunName + "(" + RP + "1, arguments.callee)){" + RP + "2} else {" + RP + "3}}",
             getIid(),
