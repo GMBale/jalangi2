@@ -22,6 +22,8 @@
 (function (sandbox) {
     function MyAnalysis () {
         var iidToLocation = sandbox.iidToLocation;
+        var fs = require('fs');
+        var iidMap = JSON.parse(fs.readFileSync("iidMap.json"));
         var Constants = sandbox.Constants;
         var HOP = Constants.HOP;
         var sort = Array.prototype.sort;
@@ -35,6 +37,46 @@
             }
           }
         };
+
+        this.literal = function (iid, val, hasGetterSetter) {
+          var ty = typeof val;
+          if(["object", "function"].includes(ty)) {
+            sandbox.log(iidMap[iid][1]);
+            let loc = iidMap[iid][1] + ":" + J$.____context.toString();
+            J$.____heap[loc] = val;
+          }
+        }
+
+        this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
+          sandbox.log(iidMap[iid]);
+          if(iidMap[iid].length > 1) {
+            J$.____context.CFA.context.unshift(iidMap[iid][3]);
+          }
+        }
+
+        this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
+          let flag = true;
+          for(let loc in J$.____heap) {
+            let ref = J$.____heap[loc];
+            if(ref === result) {
+              flag = false;
+              break;
+            }
+          }
+          if(flag) {
+            let fid;
+            if (isConstructor) {
+              fid = f.____Construct;
+            } else {
+              fid = f.____Call;
+            }
+            let loc = "#" + fid + ":" + J$.____context.toString();
+            J$.____heap[loc] = result;
+          }
+          if(iidMap[iid].length > 1) {
+            J$.____context.CFA.context.shift();
+          }
+        }
     }
     sandbox.analysis = new MyAnalysis();
 })(J$);

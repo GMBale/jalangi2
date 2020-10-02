@@ -24,6 +24,7 @@
         function clientAnalysisException(e) {
             console.error("analysis exception!!!");
             console.error(e.stack);
+            throw e;
             if (typeof process !== 'undefined' && process.exit) {
                 process.exit(1);
             } else {
