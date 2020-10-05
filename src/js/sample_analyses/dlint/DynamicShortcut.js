@@ -42,7 +42,7 @@
           var ty = typeof val;
           if(["object", "function"].includes(ty)) {
             sandbox.log(iidMap[iid][1]);
-            let loc = iidMap[iid][1] + ":" + J$.____context.toString();
+            let loc = iidMap[iid][1] + ":" + J$.____tracePartition.ToString();
             J$.____heap[loc] = val;
           }
         }
@@ -50,7 +50,7 @@
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
           sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
-            J$.____context.CFA.context.unshift(iidMap[iid][3]);
+            J$.____tracePartition[0].callsiteList.unshift(iidMap[iid][3]);
           }
         }
 
@@ -70,11 +70,11 @@
             } else {
               fid = f.____Call;
             }
-            let loc = "#" + fid + ":" + J$.____context.toString();
+            let loc = "#" + fid + ":" + J$.____tracePartition.ToString();
             J$.____heap[loc] = result;
           }
           if(iidMap[iid].length > 1) {
-            J$.____context.CFA.context.shift();
+            J$.____tracePartition[0].callsiteList.shift();
           }
         }
     }
