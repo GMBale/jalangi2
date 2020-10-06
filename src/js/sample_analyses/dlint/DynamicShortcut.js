@@ -50,7 +50,7 @@
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
           sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
-            J$.____tracePartition[0].callsiteList.unshift(iidMap[iid][3]);
+            J$.____tracePartition.callsiteList.unshift(iidMap[iid][3]);
           }
         }
 
@@ -74,7 +74,7 @@
             J$.____heap[loc] = result;
           }
           if(iidMap[iid].length > 1) {
-            J$.____tracePartition[0].callsiteList.shift();
+            J$.____tracePartition.callsiteList.shift();
           }
         }
     }
