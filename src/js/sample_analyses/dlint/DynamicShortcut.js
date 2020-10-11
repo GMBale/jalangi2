@@ -41,37 +41,39 @@
         this.literal = function (iid, val, hasGetterSetter) {
           var ty = typeof val;
           if(["object", "function"].includes(ty)) {
-            sandbox.log(iidMap[iid][1]);
+            //sandbox.log(iidMap[iid][1]);
             let loc = iidMap[iid][1] + ":" + J$.____tracePartition.ToString();
             J$.____heap[loc] = val;
           }
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
-          sandbox.log(iidMap[iid]);
+          //sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
             J$.____tracePartition.callsiteList.unshift(iidMap[iid][3]);
           }
         }
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
-          let flag = true;
-          for(let loc in J$.____heap) {
-            let ref = J$.____heap[loc];
-            if(ref === result) {
-              flag = false;
-              break;
+          if (["object", "function"].indexOf(typeof result) >= 0) {
+            let flag = true;
+            for(let loc in J$.____heap) {
+              let ref = J$.____heap[loc];
+              if(ref === result) {
+                flag = false;
+                break;
+              }
             }
-          }
-          if(flag) {
-            let fid;
-            if (isConstructor) {
-              fid = f.____Construct;
-            } else {
-              fid = f.____Call;
+            if(flag) {
+              let fid;
+              if (isConstructor) {
+                fid = f.____Construct;
+              } else {
+                fid = f.____Call;
+              }
+              let loc = "#" + fid + ":" + J$.____tracePartition.ToString();
+              J$.____heap[loc] = result;
             }
-            let loc = "#" + fid + ":" + J$.____tracePartition.ToString();
-            J$.____heap[loc] = result;
           }
           if(iidMap[iid].length > 1) {
             J$.____tracePartition.callsiteList.shift();
