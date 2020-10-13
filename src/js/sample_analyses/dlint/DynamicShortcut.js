@@ -41,8 +41,13 @@
         this.literal = function (iid, val, hasGetterSetter) {
           var ty = typeof val;
           if(["object", "function"].includes(ty)) {
-            //sandbox.log(iidMap[iid][1]);
-            let loc = iidMap[iid][1] + ":" + J$.____tracePartition.ToString();
+            let pp;
+            if(iidMap[iid]) {
+              pp = iidMap[iid][1];
+            } else {
+              pp = "#" + val.____Call;
+            }
+            const loc = pp + ":" + J$.____tracePartition.ToString();
             J$.____heap[loc] = val;
           }
         }
