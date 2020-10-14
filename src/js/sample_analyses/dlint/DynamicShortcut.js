@@ -44,18 +44,37 @@
             let pp;
             if(iidMap[iid]) {
               pp = iidMap[iid][1];
-            } else {
-              pp = "#" + val.____Call;
             }
-            const loc = pp + ":" + J$.____tracePartition.ToString();
+            const loc = pp + ":" + J$.____context.tracePartition.ToString();
             J$.____heap[loc] = val;
+
+            if(ty === "function") {
+              Object.defineProperty(val, "____Call", { value: +iidMap[iid][2], writable: true, configruable: true });
+              Object.defineProperty(val, "____Construct", { value: +iidMap[iid][2], writable: true, configruable: true });
+              Object.defineProperty(val, "____Scope", { value: J$.____context.outer[0], writable: true, configruable: true });
+              sandbox.log(J$.____context.outer);
+              let flag = true;
+              let prototype = val.prototype;
+              for(let loc in J$.____heap) {
+                let ref = J$.____heap[loc];
+                if(ref === prototype) {
+                  flag = false;
+                  break;
+                }
+              }
+              if(flag) {
+                let loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
+                J$.____heap[loc] = prototype;
+              }
+            }
           }
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
           //sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
-            J$.____tracePartition.callsiteList.unshift(iidMap[iid][3]);
+            J$.____context.outer.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
+            J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][3]);
           }
         }
 
@@ -76,12 +95,13 @@
               } else {
                 fid = f.____Call;
               }
-              let loc = "#" + fid + ":" + J$.____tracePartition.ToString();
+              let loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
               J$.____heap[loc] = result;
             }
           }
           if(iidMap[iid].length > 1) {
-            J$.____tracePartition.callsiteList.shift();
+            J$.____context.outer.shift();
+            J$.____context.tracePartition.callsiteList.shift();
           }
         }
     }
