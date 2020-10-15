@@ -452,13 +452,13 @@ if (typeof J$ === 'undefined') {
     }
 
     // Function enter
-    function Fe(iid, f, dis /* this */, args) {
+    function Fe(iid, f, dis /* this */, args, getter) {
         argIndex = 0;
         returnStack.push(undefined);
         wrappedExceptionVal = undefined;
         updateSid(f);
         if (sandbox.analysis && sandbox.analysis.functionEnter) {
-            sandbox.analysis.functionEnter(iid, f, dis, args);
+            sandbox.analysis.functionEnter(iid, f, dis, args, getter);
         }
     }
 

@@ -51,8 +51,7 @@
             if(ty === "function") {
               Object.defineProperty(val, "____Call", { value: +iidMap[iid][2], writable: true, configruable: true });
               Object.defineProperty(val, "____Construct", { value: +iidMap[iid][2], writable: true, configruable: true });
-              Object.defineProperty(val, "____Scope", { value: J$.____context.outer[0], writable: true, configruable: true });
-              sandbox.log(J$.____context.outer);
+              Object.defineProperty(val, "____Outer", { value: J$.____context.env[0], writable: true, configruable: true });
               let flag = true;
               let prototype = val.prototype;
               for(let loc in J$.____heap) {
@@ -73,7 +72,7 @@
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
           //sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
-            J$.____context.outer.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
+            J$.____context.env.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
             J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][3]);
           }
         }
@@ -100,9 +99,14 @@
             }
           }
           if(iidMap[iid].length > 1) {
-            J$.____context.outer.shift();
+            J$.____context.env.shift();
             J$.____context.tracePartition.callsiteList.shift();
           }
+        }
+
+        this.functionEnter = function (iid, f, dis, args, getter) {
+          J$.____context.map[J$.____context.env[0]] = getter;
+          getter.____outer = f.____Outer;
         }
     }
     sandbox.analysis = new MyAnalysis();
