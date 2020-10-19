@@ -40,12 +40,8 @@
 
         this.literal = function (iid, val, hasGetterSetter) {
           var ty = typeof val;
-          if(["object", "function"].includes(ty)) {
-            let pp;
-            if(iidMap[iid]) {
-              pp = iidMap[iid][1];
-            }
-            const loc = pp + ":" + J$.____context.tracePartition.ToString();
+          if(val !== null && ["object", "function"].includes(ty)) {
+            const loc = iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString();
             J$.____heap[loc] = val;
 
             if(ty === "function") {
@@ -70,7 +66,6 @@
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
-          //sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
             J$.____context.env.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
