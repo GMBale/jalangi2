@@ -1556,36 +1556,11 @@ if (typeof J$ === 'undefined') {
 
     function funCond(node) {
         var iid;
-        if (["WhileStatement", "DoWhileStatement", "ForStatement"].indexOf(node.type) !== -1) {
-            iid = getIid().value;
-            printLineInfoAux(iid, node, "LE");
-        }
         var ret = wrapConditional(node.test, node.test);
         node.test = ret;
         node.test = wrapWithX1(node, node.test);
         node.init = wrapWithX1(node, node.init);
         node.update = wrapWithX1(node, node.update);
-        if (["WhileStatement", "DoWhileStatement", "ForStatement"].indexOf(node.type) !== -1) {
-            var ret = {
-              type: "BlockStatement",
-              body: [
-                acorn.parse(`J$.LE(${iid});`, {locations: false, ecmaVersion: 6 }).body[0],
-                acorn.parse(`var _tm_p_${iid} = 0;`, {locations: false, ecmaVersion: 6 }).body[0],
-                node,
-                acorn.parse(`J$.LR();`, {locations: false, ecmaVersion: 6 }).body[0],
-              ]
-            }
-            if (node.body.type !== "BlockStatement") {
-                node.body = {
-                    type: "BlockStatement",
-                    body: [node.body]
-                }
-            }
-            node.body.body.unshift(
-                acorn.parse(`J$.LI(_tm_p_${iid}++);`, {locations: false, ecmaVersion: 6 }).body[0]
-            );
-            return ret;
-        }
         return node;
     }
 
@@ -1657,7 +1632,32 @@ if (typeof J$ === 'undefined') {
         "IfStatement": funCond,
         "WhileStatement": funCond,
         "DoWhileStatement": funCond,
-        "ForStatement": funCond
+        "ForStatement": funCond,
+        "BlockStatement": function (node) {
+            var len = node.body.length;
+            for(var i = len - 1; i >= 0; --i) {
+                var st = node.body[i];
+                if (["WhileStatement", "DoWhileStatement", "ForStatement", "ForInStatement"].indexOf(st.type) === -1) continue;
+                var iid = getIid().value;
+                printLineInfoAux(iid, st, "LE");
+                node.body.splice(i+1, 0, acorn.parse(`J$.LR();`, {locations: false, ecmaVersion: 6 }).body[0]);
+                node.body.splice(i, 0, acorn.parse(`J$.LE(${iid});`, {locations: false, ecmaVersion: 6 }).body[0], acorn.parse(`var _tm_p_${iid} = 0;`, {locations: false, ecmaVersion: 6 }).body[0]);
+                if (st.body.type === "BlockStatement") {
+                    st.body.body.unshift(
+                        acorn.parse(`J$.LI(_tm_p_${iid}++);`, {locations: false, ecmaVersion: 6 }).body[0]
+                    );
+                } else {
+                    st.body.expression = {
+                        type: "SequenceExpression",
+                        expressions: [
+                            acorn.parse(`J$.LI(_tm_p_${iid}++);`, {locations: false, ecmaVersion: 6 }).body[0],
+                            st.body.expression
+                        ]
+                    };
+                }
+            }
+            return node;
+        }
     };
 
     function addScopes(ast) {
