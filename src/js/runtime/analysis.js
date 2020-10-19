@@ -769,6 +769,23 @@ if (typeof J$ === 'undefined') {
         }
     }
 
+    function LE(iid) {
+        if (sandbox.analysis && sandbox.analysis.LE) {
+            return sandbox.analysis.LE(iid);
+        }
+    }
+
+    function LI(iid, iter) {
+        if (sandbox.analysis && sandbox.analysis.LI) {
+            return sandbox.analysis.LI(iid, iter);
+        }
+    }
+
+    function LR() {
+        if (sandbox.analysis && sandbox.analysis.LR) {
+            return sandbox.analysis.LR();
+        }
+    }
 
     //----------------------------------- End Jalangi Library backend ---------------------------------
 
@@ -807,5 +824,9 @@ if (typeof J$ === 'undefined') {
 
     sandbox.EVAL_ORG = EVAL_ORG;
     sandbox.log = log;
+
+    sandbox.LE = LE;
+    sandbox.LI = LI;
+    sandbox.LR = LR;
 })(J$);
 

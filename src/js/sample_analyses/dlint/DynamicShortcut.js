@@ -51,7 +51,7 @@
             if(ty === "function") {
               Object.defineProperty(val, "____Call", { value: +iidMap[iid][2], writable: true, configruable: true });
               Object.defineProperty(val, "____Construct", { value: +iidMap[iid][2], writable: true, configruable: true });
-              Object.defineProperty(val, "____Outer", { value: J$.____context.env[0], writable: true, configruable: true });
+              Object.defineProperty(val, "____Scope", { value: J$.____context.env[0], writable: true, configruable: true });
               let flag = true;
               let prototype = val.prototype;
               for(let loc in J$.____heap) {
@@ -73,7 +73,11 @@
           //sandbox.log(iidMap[iid]);
           if(iidMap[iid].length > 1) {
             J$.____context.env.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
-            J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][3]);
+            if(J$.____context.tracePartition.length) {
+              J$.____context.tracePartition[0].callsiteList.unshift(iidMap[iid][3]);
+            } else {
+              J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][3]);
+            }
           }
         }
 
@@ -100,14 +104,37 @@
           }
           if(iidMap[iid].length > 1) {
             J$.____context.env.shift();
-            J$.____context.tracePartition.callsiteList.shift();
+            if(J$.____context.tracePartition.length) {
+              J$.____context.tracePartition[0].callsiteList.shift();
+            } else {
+              J$.____context.tracePartition.callsiteList.shift();
+            }
           }
         }
 
         this.functionEnter = function (iid, f, dis, args, getter) {
           J$.____context.map[J$.____context.env[0]] = getter;
-          getter.____outer = f.____Outer;
+          getter.____outer = f.____Scope;
+        } 
+        this.LE = function (iid) {
+          if(J$.____context.tracePartition.length) {
+            J$.____context.tracePartition[1].iterList.unshift(iidMap[iid][1] + "(0)");
+          }
         }
+
+        this.LI = function (iter) {
+          if(J$.____context.tracePartition.length) {
+            var cur = J$.____context.tracePartition[1].iterList[0];
+            J$.____context.tracePartition[1].iterList[0] = cur.substring(0, cur.lastIndexOf("(")) + "(" + iter + ")";
+          }
+        }
+
+        this.LR = function () {
+          if(J$.____context.tracePartition.length) {
+            J$.____context.tracePartition[1].iterList.shift();
+          }
+        }
+
     }
     sandbox.analysis = new MyAnalysis();
 })(J$);

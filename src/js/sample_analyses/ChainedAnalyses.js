@@ -41,7 +41,7 @@
             "literal", "onReady","putFieldPre",
             "putField", "read", "runInstrumentedFunctionBody",
             "scriptEnter", "scriptExit",  "unaryPre",
-            "unary", "write"];
+            "unary", "write", "LE", "LI", "LR"];
 
         this.globals = {};
 

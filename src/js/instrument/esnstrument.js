@@ -1555,11 +1555,37 @@ if (typeof J$ === 'undefined') {
     };
 
     function funCond(node) {
+        var iid;
+        if (["WhileStatement", "DoWhileStatement", "ForStatement"].indexOf(node.type) !== -1) {
+            iid = getIid().value;
+            printLineInfoAux(iid, node, "LE");
+        }
         var ret = wrapConditional(node.test, node.test);
         node.test = ret;
         node.test = wrapWithX1(node, node.test);
         node.init = wrapWithX1(node, node.init);
         node.update = wrapWithX1(node, node.update);
+        if (["WhileStatement", "DoWhileStatement", "ForStatement"].indexOf(node.type) !== -1) {
+            var ret = {
+              type: "BlockStatement",
+              body: [
+                acorn.parse(`J$.LE(${iid});`, {locations: false, ecmaVersion: 6 }).body[0],
+                acorn.parse(`var _tm_p_${iid} = 0;`, {locations: false, ecmaVersion: 6 }).body[0],
+                node,
+                acorn.parse(`J$.LR();`, {locations: false, ecmaVersion: 6 }).body[0],
+              ]
+            }
+            if (node.body.type !== "BlockStatement") {
+                node.body = {
+                    type: "BlockStatement",
+                    body: [node.body]
+                }
+            }
+            node.body.body.unshift(
+                acorn.parse(`J$.LI(_tm_p_${iid}++);`, {locations: false, ecmaVersion: 6 }).body[0]
+            );
+            return ret;
+        }
         return node;
     }
 
