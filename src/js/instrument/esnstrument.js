@@ -1650,7 +1650,7 @@ if (typeof J$ === 'undefined') {
                     st.body.expression = {
                         type: "SequenceExpression",
                         expressions: [
-                            acorn.parse(`J$.LI(_tm_p_${iid}++);`, {locations: false, ecmaVersion: 6 }).body[0],
+                            acorn.parse(`J$.LI(_tm_p_${iid}++)`, {locations: false, ecmaVersion: 6 }).body[0].expression,
                             st.body.expression
                         ]
                     };
