@@ -73,6 +73,13 @@
             } else {
               J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][3]);
             }
+            if(f === Function.prototype.call) {
+              if(J$.____context.tracePartition.length) {
+                J$.____context.tracePartition[0].callsiteList.unshift("-102:16");
+              } else {
+                J$.____context.tracePartition.callsiteList.unshift("-102:16");
+              }
+            }
           }
         }
 
@@ -100,9 +107,11 @@
           if(iidMap[iid].length > 1) {
             J$.____context.env.shift();
             if(J$.____context.tracePartition.length) {
-              J$.____context.tracePartition[0].callsiteList.shift();
+              const last = J$.____context.tracePartition[0].callsiteList.shift();
+              if(last === "-102:16") J$.____context.tracePartition[0].callsiteList.shift();
             } else {
-              J$.____context.tracePartition.callsiteList.shift();
+              const last = J$.____context.tracePartition.callsiteList.shift();
+              if(last === "-102:16") J$.____context.tracePartition.callsiteList.shift();
             }
           }
         }

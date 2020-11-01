@@ -43,21 +43,20 @@ function runAnalysis(initParam) {
     }
     // we shift here so we can use the rest of the array later when
     // hacking process.argv; see below
-    var script = args.script_and_args.shift();
 
     var path = require('path');
     //acorn = require("acorn");
-    sb.push(fs.readFileSync("node_modules/acorn/dist/acorn.js").toString());
+    sb.push(fs.readFileSync(path.join(__dirname, "node_modules/acorn/dist/acorn.js")).toString());
     //esotope = require("esotope");
-    sb.push(fs.readFileSync("node_modules/esotope/esotope.js").toString());
-    require('./src/js/headers').headerSources.forEach(function(header){
-      sb.push(fs.readFileSync(header).toString());
+    sb.push(fs.readFileSync(path.join(__dirname, "node_modules/esotope/esotope.js")).toString());
+    require(path.join(__dirname, '/src/js/headers')).headerSources.forEach(function(header){
+      sb.push(fs.readFileSync(path.join(__dirname, header)).toString());
         //require("./../../../"+header);
     });
 
     if (args.analysis) {
         args.analysis.forEach(function (src) {
-            sb.push(fs.readFileSync(src).toString());
+            sb.push(fs.readFileSync(path.join(__dirname, src)).toString());
             //require(path.resolve(src));
         });
     }
@@ -75,4 +74,13 @@ if (args.initParam) {
     });
 }
 runAnalysis(initParam);
+
+var script = args.script_and_args.shift();
+var scriptCode = fs.readFileSync(script).toString();
+var fmap = JSON.parse(fs.readFileSync("function.json"));
+var point = "eval(J$.____arguments[0]);";
+var idx = scriptCode.indexOf(point);
+sb.push(scriptCode.substring(0, idx));
+sb.push(fmap[0]);
+sb.push(scriptCode.substring(idx + point.length));
 fs.writeFileSync("direct_vanilla.js", sb.join("\n"));
