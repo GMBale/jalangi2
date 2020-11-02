@@ -43,23 +43,18 @@
           if(val !== null && ["object", "function"].includes(ty)) {
             const loc = iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString();
             J$.____heap[loc] = val;
+            J$.____refMap.set(val, loc);
 
             if(ty === "function") {
               Object.defineProperty(val, "____Call", { value: +iidMap[iid][2], writable: true, configruable: true });
               Object.defineProperty(val, "____Construct", { value: +iidMap[iid][2], writable: true, configruable: true });
               Object.defineProperty(val, "____Scope", { value: J$.____context.env[0], writable: true, configruable: true });
-              let flag = true;
               let prototype = val.prototype;
-              for(let loc in J$.____heap) {
-                let ref = J$.____heap[loc];
-                if(ref === prototype) {
-                  flag = false;
-                  break;
-                }
-              }
+              const flag = J$.____refMap.get(prototype) === undefined;
               if(flag) {
                 let loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
                 J$.____heap[loc] = prototype;
+                J$.____refMap.set(prototype, loc);
               }
             }
           }
@@ -85,14 +80,7 @@
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
           if (["object", "function"].indexOf(typeof result) >= 0) {
-            let flag = true;
-            for(let loc in J$.____heap) {
-              let ref = J$.____heap[loc];
-              if(ref === result) {
-                flag = false;
-                break;
-              }
-            }
+            const flag = J$.____refMap.get(result) === undefined;
             if(flag) {
               let fid;
               if (isConstructor) {
@@ -102,6 +90,7 @@
               }
               let loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
               J$.____heap[loc] = result;
+              J$.____refMap.set(result, loc);
             }
           }
           if(iidMap[iid].length > 1) {
