@@ -50,7 +50,7 @@
               Object.defineProperty(val, "____Construct", { value: +iidMap[iid][2], writable: true, configruable: true });
               Object.defineProperty(val, "____Scope", { value: J$.____context.env[0], writable: true, configruable: true });
               let prototype = val.prototype;
-              const flag = J$.____refMap.get(prototype) === undefined;
+              const flag = !J$.____refMap.has(prototype);
               if(flag) {
                 let loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
                 J$.____heap[loc] = prototype;
@@ -80,7 +80,7 @@
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
           if (["object", "function"].indexOf(typeof result) >= 0) {
-            const flag = J$.____refMap.get(result) === undefined;
+            const flag = !J$.____refMap.has(result);
             if(flag) {
               let fid;
               if (isConstructor) {
@@ -94,21 +94,80 @@
             }
           }
           if(iidMap[iid].length > 1) {
-            J$.____context.env.shift();
+            const getter = J$.____context.env.shift();
+            for(let tv in getter) {
+              if(tv.startsWith("<>")) {
+                let vName = tv.substring(2, tv.lastIndexOf("<>"));
+                J$.____var2env[vName].shift();
+              }
+            }
             if(J$.____context.tracePartition.length) {
               const last = J$.____context.tracePartition[0].callsiteList.shift();
-              if(last === "-102:16") J$.____context.tracePartition[0].callsiteList.shift();
+              const fid = +last.substring(0, last.indexOf(":"));
+              if(fid < 0) J$.____context.tracePartition[0].callsiteList.shift();
             } else {
               const last = J$.____context.tracePartition.callsiteList.shift();
-              if(last === "-102:16") J$.____context.tracePartition.callsiteList.shift();
+              const fid = +last.substring(0, last.indexOf(":"));
+              if(fid < 0) J$.____context.tracePartition.callsiteList.shift();
             }
           }
         }
 
+        this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
+          if(isGlobal) {
+            const key = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())] " + name;
+            if(!J$.____mutation.has(key)) {
+              J$.____mutation.set(key, J$.____alphaValue(lhs));
+            }
+          } else if(J$.____var2env[name]) {
+            const key = `${J$.____var2env[name][0]}@${name}`;
+            if(!J$.____mutation.has(key)) {
+              J$.____mutation.set(key, J$.____alphaValue(lhs));
+            }
+          }
+        }
+        this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
+          const key = `${J$.____refMap.get(base)} ${offset}`;
+          if(!J$.____mutation.has(key)) {
+            const desc = Object.getOwnPropertyDescriptor(base, offset);
+            const value = desc ? J$.____alphaValue(desc.value) : "⊥";
+            J$.____mutation.set(key, value);
+          }
+        }
+        this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
+          if(wrappedExceptionVal !== undefined) {
+            if(wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
+              throw wrappedExceptionVal.exception;
+            }
+          }
+        }
         this.functionEnter = function (iid, f, dis, args, getter) {
+          if(J$.____context.tracePartition[0].callsiteList.length === 1) {
+            J$.____mutation = new J$.Map();
+            const nargs = [];
+            for(let arg of args) {
+              nargs.push(J$.____alphaValue(arg));
+            }
+            J$.____checkpoint = {
+              fid: f.____Call,
+              tracePartition: J$.____context.tracePartition.ToString(),
+              this: J$.____alphaValue(f),
+              arguments: nargs
+            }
+          }
           J$.____context.map[J$.____context.env[0]] = getter;
+          for(let tv in getter) {
+            if(tv.startsWith("<>")) {
+              let vName = tv.substring(2, tv.lastIndexOf("<>"));
+              if(J$.____var2env[vName]) {
+                J$.____var2env[vName].unshift(J$.____context.env[0]);
+              } else {
+                J$.____var2env[vName] = [J$.____context.env[0]];
+              }
+            }
+          }
           getter.____outer = f.____Scope;
-        } 
+        }
         this.LE = function (iid) {
           if(J$.____context.tracePartition.length) {
             J$.____context.tracePartition[1].iterList.unshift(iidMap[iid][1] + "(0)");
