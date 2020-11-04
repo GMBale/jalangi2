@@ -61,6 +61,9 @@
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
+          if(isConstructor) {
+            J$.____isConstructor = iidMap[iid][4] + ":" + J$.____context.tracePartition.ToString();
+          }
           if(iidMap[iid].length > 1) {
             J$.____context.env.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
@@ -79,6 +82,7 @@
         }
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
+          J$.____isConstructor = undefined;
           if (["object", "function"].indexOf(typeof result) >= 0) {
             const flag = !J$.____refMap.has(result);
             if(flag) {
@@ -129,6 +133,9 @@
         this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
           const key = `${J$.____refMap.get(base)} ${offset}`;
           if(!J$.____mutation.has(key)) {
+            //if(J$.____refMap.get(base) === undefined) {
+            //  throw new Error(iid + "  " + J$.____context.tracePartition.ToString());
+            //}
             const desc = Object.getOwnPropertyDescriptor(base, offset);
             const value = desc ? J$.____alphaValue(desc.value) : "⊥";
             J$.____mutation.set(key, value);
@@ -142,6 +149,11 @@
           }
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
+          if(J$.____isConstructor) {
+            J$.____heap[J$.____isConstructor] = dis;
+            J$.____refMap.set(dis, J$.____isConstructor);
+          }
+          J$.____visitedEntryControlPoints.add(f.____Call + "+" + J$.____context.tracePartition.ToString());
           if(J$.____context.tracePartition[0].callsiteList.length === 1) {
             J$.____mutation = new J$.Map();
             const nargs = [];
