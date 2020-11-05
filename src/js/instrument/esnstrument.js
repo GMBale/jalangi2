@@ -733,7 +733,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapLogicalAnd(node, left, right) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("&&", node)) {
-            printCondIidToLoc(node, logConditionalFunName);
+            printCondIidToLoc(left, logConditionalFunName);
             var ret = replaceInExpr(
                 logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + RP + "3:" + logLastFunName + "()",
                 getCondIid(),
@@ -749,7 +749,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapLogicalOr(node, left, right) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("||", node)) {
-            printCondIidToLoc(node, logConditionalFunName);
+            printCondIidToLoc(left, logConditionalFunName);
             var ret = replaceInExpr(
                 logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + logLastFunName + "():" + RP + "3",
                 getCondIid(),
