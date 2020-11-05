@@ -61,15 +61,21 @@
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
+          J$.____stack.push(iid);
+          let prop = "Call";
           if(isConstructor) {
-            J$.____isConstructor = iidMap[iid][4] + ":" + J$.____context.tracePartition.ToString();
+            prop = "Construct";
+            if(iidMap[iid][prop] === undefined) {
+              process.stdout.write(iid.toString() + "\n");
+            }
+            J$.____isConstructor = iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString();
           }
-          if(iidMap[iid].length > 1) {
-            J$.____context.env.unshift(iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString());
+          if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
+            J$.____context.env.unshift(iidMap[iid][prop][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
-              J$.____context.tracePartition[0].callsiteList.unshift(iidMap[iid][3]);
+              J$.____context.tracePartition[0].callsiteList.unshift(iidMap[iid][prop][3]);
             } else {
-              J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][3]);
+              J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][prop][3]);
             }
             if(f === Function.prototype.call) {
               if(J$.____context.tracePartition.length) {
@@ -83,7 +89,11 @@
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
           J$.____isConstructor = undefined;
-          if (["object", "function"].indexOf(typeof result) >= 0) {
+          let prop = "Call";
+          if(isConstructor) {
+            prop = "Construct";
+          }
+          if (result !== null && ["object", "function"].indexOf(typeof result) >= 0) {
             const flag = !J$.____refMap.has(result);
             if(flag) {
               let fid;
@@ -93,11 +103,14 @@
                 fid = f.____Call;
               }
               let loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
+              if(fid === -102) {
+                fid = "-102[12]";
+              }
               J$.____heap[loc] = result;
               J$.____refMap.set(result, loc);
             }
           }
-          if(iidMap[iid].length > 1) {
+          if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
             const getter = J$.____context.env.shift();
             for(let tv in getter) {
               if(tv.startsWith("<>")) {
@@ -115,6 +128,7 @@
               if(fid < 0) J$.____context.tracePartition.callsiteList.shift();
             }
           }
+          J$.____stack.pop(iid);
         }
 
         this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
@@ -133,9 +147,6 @@
         this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
           const key = `${J$.____refMap.get(base)} ${offset}`;
           if(!J$.____mutation.has(key)) {
-            //if(J$.____refMap.get(base) === undefined) {
-            //  throw new Error(iid + "  " + J$.____context.tracePartition.ToString());
-            //}
             const desc = Object.getOwnPropertyDescriptor(base, offset);
             const value = desc ? J$.____alphaValue(desc.value) : "⊥";
             J$.____mutation.set(key, value);
@@ -153,7 +164,7 @@
             J$.____heap[J$.____isConstructor] = dis;
             J$.____refMap.set(dis, J$.____isConstructor);
           }
-          J$.____visitedEntryControlPoints.add(f.____Call + "+" + J$.____context.tracePartition.ToString());
+          J$.____visitedEntryControlPoints.add(f.____Call + "+" + J$.____context.tracePartition.tpToString());
           if(J$.____context.tracePartition[0].callsiteList.length === 1) {
             J$.____mutation = new J$.Map();
             const nargs = [];
@@ -162,7 +173,7 @@
             }
             J$.____checkpoint = {
               fid: f.____Call,
-              tracePartition: J$.____context.tracePartition.ToString(),
+              tracePartition: J$.____context.tracePartition.tpToString(),
               this: J$.____alphaValue(f),
               arguments: nargs
             }
