@@ -23,6 +23,7 @@
 
 var sb = [];
 var fs = require('fs');
+var path = require('path');
 var argparse = require('argparse');
 var parser = new argparse.ArgumentParser({
     addHelp: true,
@@ -44,7 +45,6 @@ function runAnalysis(initParam) {
     // we shift here so we can use the rest of the array later when
     // hacking process.argv; see below
 
-    var path = require('path');
     //acorn = require("acorn");
     sb.push(fs.readFileSync(path.join(__dirname, "node_modules/acorn/dist/acorn.js")).toString());
     //esotope = require("esotope");
@@ -77,10 +77,10 @@ runAnalysis(initParam);
 
 var script = args.script_and_args.shift();
 var scriptCode = fs.readFileSync(script).toString();
-var fmap = JSON.parse(fs.readFileSync("function.json"));
+var fmap = JSON.parse(fs.readFileSync(path.join(path.dirname(script), "function.json")));
 var point = "eval(J$.____arguments[0]);";
 var idx = scriptCode.indexOf(point);
 sb.push(scriptCode.substring(0, idx));
 sb.push(fmap[0]);
 sb.push(scriptCode.substring(idx + point.length));
-fs.writeFileSync("direct_vanilla.js", sb.join("\n"));
+fs.writeFileSync(path.join(path.dirname(script), "direct_vanilla.js"), sb.join("\n"));

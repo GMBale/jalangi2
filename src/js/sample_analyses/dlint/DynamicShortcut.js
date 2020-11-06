@@ -21,7 +21,8 @@
 
 (function (sandbox) {
     function MyAnalysis () {
-        var iidToLocation = sandbox.iidToLocation;
+        var trueBranches = {};
+        var falseBranches = {};
         var fs = require('fs');
         var iidMap = JSON.parse(fs.readFileSync("iidMap.json"));
         var Constants = sandbox.Constants;
@@ -210,6 +211,29 @@
           }
         }
 
+        this.conditional = function (iid, result) {
+          if (result)
+            trueBranches[iid] = (trueBranches[iid]|0) + 1;
+          else
+            falseBranches[iid] = (falseBranches[iid]|0) + 1;
+        };
+
+        this.endExecution = function () {
+          const sb = [];
+          for (let [map, str] of [[trueBranches, "True"], [falseBranches, "False"]]) {
+            for (var id in map) {
+              if (map.hasOwnProperty(id)) {
+                const locObj = J$.iids[id];
+                if(locObj === undefined) {
+                  throw new Error(id + " " + str);
+                }
+                let loc = `(${J$.filename}:${locObj.join(":")})`;
+                sb.push(str + " branch taken at " + loc + " " + map[id] + " times");
+              }
+            }
+          }
+          return sb.join("\n");
+        };
     }
     sandbox.analysis = new MyAnalysis();
 })(J$);
