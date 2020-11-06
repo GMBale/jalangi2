@@ -23,20 +23,6 @@
         this.endExecution = function () {
             print(trueBranches, "True");
             print(falseBranches, "False");
-            const sb = [];
-            for (let [map, str] of [[trueBranches, "True"], [falseBranches, "False"]]) {
-              for (var id in map) {
-                if (map.hasOwnProperty(id)) {
-                  const locObj = J$.iids[id];
-                  if(locObj === undefined) {
-                    throw new Error(id + " " + str);
-                  }
-                  let loc = `(${J$.filename}:${locObj.join(":")})`;
-                  sb.push(str + " branch taken at " + loc + " " + map[id] + " times");
-                }
-              }
-            }
-            return sb.join("\n");
         };
     }
 
