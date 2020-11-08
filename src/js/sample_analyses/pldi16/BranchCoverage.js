@@ -9,8 +9,17 @@
 (function (sandbox) {
     var trueBranches = {};
     var falseBranches = {};
+    J$.____stack = [];
+    J$.____path = [];
 
     function MyAnalysis() {
+        this.functionEnter = function (iid) {
+          J$.____path.push(iid);
+          J$.____stack.push(iid);
+        }
+        this.functionExit = function (iid) {
+          J$.____stack.pop();
+        }
 
         this.conditional = function (iid, result) {
             var id = J$.getGlobalIID(iid);
@@ -21,6 +30,7 @@
         };
 
         this.endExecution = function () {
+            //sandbox.log(J$.____path.join("\n"));
             print(trueBranches, "True");
             print(falseBranches, "False");
         };

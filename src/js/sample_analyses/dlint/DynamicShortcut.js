@@ -21,6 +21,7 @@
 
 (function (sandbox) {
     function MyAnalysis () {
+        J$.____path = [];
         var trueBranches = {};
         var falseBranches = {};
         var fs = require('fs');
@@ -43,8 +44,10 @@
           var ty = typeof val;
           if(val !== null && ["object", "function"].includes(ty)) {
             const loc = iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString();
-            J$.____heap[loc] = val;
-            J$.____refMap.set(val, loc);
+            if(!J$.____refMap.has(val)) {
+              J$.____heap[loc] = val;
+              J$.____refMap.set(val, loc);
+            }
 
             if(ty === "function") {
               Object.defineProperty(val, "____Call", { value: +iidMap[iid][2], writable: true, configruable: true });
@@ -62,7 +65,7 @@
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
-          J$.____stack.push(iid);
+          J$.____path.push("invokeFunPre: " + iid);
           let prop = "Call";
           if(isConstructor) {
             prop = "Construct";
@@ -129,7 +132,6 @@
               if(fid < 0) J$.____context.tracePartition.callsiteList.shift();
             }
           }
-          J$.____stack.pop(iid);
         }
 
         this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
@@ -154,6 +156,7 @@
           }
         }
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
+          J$.____stack.pop(iid);
           if(wrappedExceptionVal !== undefined) {
             if(wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
               throw wrappedExceptionVal.exception;
@@ -161,9 +164,13 @@
           }
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
+          J$.____path.push(iid);
+          J$.____stack.push(iid);
           if(J$.____isConstructor) {
-            J$.____heap[J$.____isConstructor] = dis;
-            J$.____refMap.set(dis, J$.____isConstructor);
+            if(!J$.____refMap.has(dis)) {
+              J$.____heap[J$.____isConstructor] = dis;
+              J$.____refMap.set(dis, J$.____isConstructor);
+            }
           }
           J$.____visitedEntryControlPoints.add(f.____Call + "+" + J$.____context.tracePartition.tpToString());
           if(J$.____context.tracePartition[0].callsiteList.length === 1) {
@@ -175,7 +182,7 @@
             J$.____checkpoint = {
               fid: f.____Call,
               tracePartition: J$.____context.tracePartition.tpToString(),
-              this: J$.____alphaValue(f),
+              this: J$.____alphaValue(dis),
               arguments: nargs
             }
           }
