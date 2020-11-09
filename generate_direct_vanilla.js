@@ -77,5 +77,5 @@ runAnalysis(initParam);
 
 var script = args.script_and_args.shift();
 var scriptCode = fs.readFileSync(script).toString();
-var fmap = JSON.parse(fs.readFileSync(path.join(path.dirname(script), "function.json")));
+sb.push(scriptCode);
 fs.writeFileSync(path.join(path.dirname(script), "direct_vanilla.js"), sb.join("\n"));

@@ -25,7 +25,7 @@
         var trueBranches = {};
         var falseBranches = {};
         var fs = require('fs');
-        var iidMap = JSON.parse(fs.readFileSync("iidMap.json"));
+        var iidMap = JSON.parse(fs.readFileSync(__dirname + "/iidMap.json"));
         var Constants = sandbox.Constants;
         var HOP = Constants.HOP;
         var sort = Array.prototype.sort;
