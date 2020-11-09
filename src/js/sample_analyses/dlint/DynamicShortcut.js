@@ -71,9 +71,6 @@
             J$.____isConstructor = iidMap[iid][prop][5] + ":" + J$.____context.tracePartition.ToString();
           }
           J$.____argumentsLoc = iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString();
-          if(iid === 9153) {
-            throw new Error(J$.____argumentsLoc);
-          }
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
             J$.____context.env.unshift(iidMap[iid][prop][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
@@ -136,27 +133,6 @@
           }
         }
 
-        this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
-          if(isGlobal) {
-            const key = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())] " + name;
-            if(!J$.____mutation.has(key)) {
-              J$.____mutation.set(key, J$.____alphaValue(lhs));
-            }
-          } else if(J$.____var2env[name]) {
-            const key = `${J$.____var2env[name][0]}@${name}`;
-            if(!J$.____mutation.has(key)) {
-              J$.____mutation.set(key, J$.____alphaValue(lhs));
-            }
-          }
-        }
-        this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
-          const key = `${J$.____refMap.get(base)} ${offset}`;
-          if(!J$.____mutation.has(key)) {
-            const desc = Object.getOwnPropertyDescriptor(base, offset);
-            const value = desc ? J$.____alphaValue(desc.value) : "⊥";
-            J$.____mutation.set(key, value);
-          }
-        }
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
           J$.____stack.pop(iid);
           if(wrappedExceptionVal !== undefined) {
@@ -183,19 +159,6 @@
             }
           }
           J$.____visitedEntryControlPoints.add(f.____Call + "+" + J$.____context.tracePartition.tpToString());
-          if(J$.____context.tracePartition[0].callsiteList.length === 1) {
-            J$.____mutation = new J$.Map();
-            const nargs = [];
-            for(let arg of args) {
-              nargs.push(J$.____alphaValue(arg));
-            }
-            J$.____checkpoint = {
-              fid: f.____Call,
-              tracePartition: J$.____context.tracePartition.tpToString(),
-              this: J$.____alphaValue(dis),
-              arguments: nargs
-            }
-          }
           J$.____context.map[J$.____context.env[0]] = getter;
           for(let tv in getter) {
             if(tv.startsWith("<>")) {
