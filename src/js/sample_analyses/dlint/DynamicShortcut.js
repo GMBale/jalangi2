@@ -32,8 +32,21 @@
 
         var info = {};
 
+        this.binary = function (iid, op, left, right, isOpAssign, isSwitchCaseComparison, isComputed) {
+          if (["object", "function"].indexOf(typeof left) >= 0) {
+            if(null !== left) {
+              "____#" in left;
+            }
+          }
+          if (["object", "function"].indexOf(typeof right) >= 0) {
+            if(null !== right) {
+              "____#" in right;
+            }
+          }
+        }
+
         this.unaryPre = function(iid, op, left){
-          if (op === "typeof" && ["object", "function"].indexOf(typeof left) >= 0) {
+          if (["object", "function"].indexOf(typeof left) >= 0) {
             if(null !== left) {
               "____#" in left;
             }
