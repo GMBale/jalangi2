@@ -21,6 +21,10 @@
           J$.____stack.pop();
         }
 
+        this.invokeFunPre = function(iid) {
+          J$.____path.push("invokeFunPre: " + iid);
+        }
+
         this.conditional = function (iid, result) {
             var id = J$.getGlobalIID(iid);
             if (result)
