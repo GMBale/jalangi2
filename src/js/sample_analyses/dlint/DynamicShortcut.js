@@ -99,9 +99,9 @@
               J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][prop][3]);
             }
             if(f === Function.prototype.call) {
-              J$.____context.tracePartition[0].callsiteList.unshift("-102:16");
+              J$.____context.tracePartition[0].callsiteList.unshift(J$.__builtinInfo.callBId);
             } else if(f === Function.prototype.apply) {
-              J$.____context.tracePartition[0].callsiteList.unshift("-101:16");
+              J$.____context.tracePartition[0].callsiteList.unshift(J$.__builtinInfo.applyBId);
             }
           }
         }
@@ -123,9 +123,6 @@
               }
 
               let loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
-              //if(fid === -102) {
-              //  fid = "-102[12]";
-              //}
               J$.____heap[loc] = result;
               J$.____refMap.set(result, loc);
             }
