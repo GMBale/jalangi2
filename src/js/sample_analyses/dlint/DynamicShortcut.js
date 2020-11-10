@@ -183,7 +183,11 @@
               }
             }
           }
-          getter.____outer = f.____Scope;
+          if(f.____Scope) {
+            getter.____outer = f.____Scope;
+          } else {
+            getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
+          }
         }
         this.LE = function (iid) {
           if(J$.____context.tracePartition.length) {
