@@ -63,9 +63,12 @@
             }
 
             if(ty === "function") {
-              Object.defineProperty(val, "____Call", { value: +iidMap[iid][2], writable: true, configruable: true });
-              Object.defineProperty(val, "____Construct", { value: +iidMap[iid][2], writable: true, configruable: true });
-              Object.defineProperty(val, "____Scope", { value: J$.____context.env[0], writable: true, configruable: true });
+              J$.____funcInfo.set(val, {
+                "____Call": +iidMap[iid][2],
+                "____Construct": +iidMap[iid][2],
+                "____Scope": J$.____context.env[0]
+              });
+
               let prototype = val.prototype;
               let loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
               J$.____heap[loc] = prototype;
@@ -77,6 +80,10 @@
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
+          if(iid === 217577) {
+            print(iid);
+            print(J$.____refMap.get(f));
+          }
           J$.____path.push("invokeFunPre: " + iid);
           let prop = "Call";
           if(isConstructor) {
@@ -92,11 +99,9 @@
               J$.____context.tracePartition.callsiteList.unshift(iidMap[iid][prop][3]);
             }
             if(f === Function.prototype.call) {
-              if(J$.____context.tracePartition.length) {
-                J$.____context.tracePartition[0].callsiteList.unshift("-102:16");
-              } else {
-                J$.____context.tracePartition.callsiteList.unshift("-102:16");
-              }
+              J$.____context.tracePartition[0].callsiteList.unshift("-102:16");
+            } else if(f === Function.prototype.apply) {
+              J$.____context.tracePartition[0].callsiteList.unshift("-101:16");
             }
           }
         }
@@ -112,16 +117,15 @@
             if(!J$.____refMap.has(result)) {
               let fid;
               if (isConstructor) {
-                fid = f.____Construct;
+                fid = J$.____funcInfo.get(f).____Construct;
               } else {
-                fid = f.____Call;
+                fid = J$.____funcInfo.get(f).____Call;
               }
 
               let loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
-              if(fid === -102) {
-                fid = "-102[12]";
-              }
-
+              //if(fid === -102) {
+              //  fid = "-102[12]";
+              //}
               J$.____heap[loc] = result;
               J$.____refMap.set(result, loc);
             }
@@ -171,7 +175,10 @@
               J$.____refMap.set(dis, J$.____isConstructor);
             }
           }
-          J$.____visitedEntryControlPoints.add(f.____Call + "+" + J$.____context.tracePartition.tpToString());
+          let funcInfo = J$.____funcInfo.get(f);
+          if(funcInfo) {
+            J$.____visitedEntryControlPoints.add(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
+          }
           J$.____context.map[J$.____context.env[0]] = getter;
           for(let tv in getter) {
             if(tv.startsWith("<>")) {
@@ -183,8 +190,9 @@
               }
             }
           }
-          if(f.____Scope) {
-            getter.____outer = f.____Scope;
+
+          if(funcInfo && funcInfo.____Scope) {
+            getter.____outer = funcInfo.____Scope;
           } else {
             getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
           }
