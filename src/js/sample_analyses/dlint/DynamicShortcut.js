@@ -31,8 +31,6 @@
         var HOP = Constants.HOP;
         var sort = Array.prototype.sort;
 
-        var info = {};
-
         this.binary = function (iid, op, left, right, isOpAssign, isSwitchCaseComparison, isComputed) {
           if (["object", "function"].indexOf(typeof left) >= 0) {
             if(null !== left) {
@@ -58,8 +56,8 @@
           var ty = typeof val;
           if(val !== null && ["object", "function"].includes(ty)) {
             const loc = iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString();
-            J$.____heap[loc] = val;
             if(!J$.____refMap.has(val)) {
+              J$.____heap[loc] = val;
               J$.____refMap.set(val, loc);
             }
 
@@ -72,8 +70,8 @@
 
               let prototype = val.prototype;
               const loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
-              J$.____heap[loc] = prototype;
               if(!J$.____refMap.has(prototype)) {
+                J$.____heap[loc] = prototype;
                 J$.____refMap.set(prototype, loc);
               }
             }
@@ -130,13 +128,8 @@
           }
 
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
-            const getter = J$.____context.env.shift();
-            for(let tv in getter) {
-              if(tv.startsWith("<>")) {
-                let vName = tv.substring(2, tv.lastIndexOf("<>"));
-                J$.____var2env[vName].shift();
-              }
-            }
+            J$.____context.env.shift();
+
             if(J$.____context.tracePartition.length) {
               const last = J$.____context.tracePartition[0].callsiteList.shift();
               const fid = +last.substring(0, last.indexOf(":"));
@@ -162,7 +155,11 @@
         }
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
-          J$.____stack.pop(iid);
+          const info = J$.____stack.pop();
+
+          if(J$.____context.tracePartition[1].iterList.length > info.iterLength) {
+            J$.____context.tracePartition[1].iterList.length = info.iterLength;
+          }
           if(wrappedExceptionVal !== undefined) {
             if(wrappedExceptionVal.exception.message && wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
               throw wrappedExceptionVal.exception;
@@ -171,12 +168,15 @@
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
           J$.____path.push(iid);
-          J$.____stack.push(iid);
+          J$.____stack.push({
+            iid,
+            iterLength: J$.____context.tracePartition[1].iterList.length
+          });
 
           // this 
           if(J$.____isConstructor) {
-            J$.____heap[J$.____isConstructor] = dis;
             if(!J$.____refMap.has(dis)) {
+              J$.____heap[J$.____isConstructor] = dis;
               J$.____refMap.set(dis, J$.____isConstructor);
             }
           }
@@ -184,22 +184,14 @@
           if(funcInfo) {
             J$.____visitedEntryControlPoints.add(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
           }
-          J$.____context.map[J$.____context.env[0]] = getter;
-          for(let tv in getter) {
-            if(tv.startsWith("<>")) {
-              let vName = tv.substring(2, tv.lastIndexOf("<>"));
-              if(J$.____var2env[vName]) {
-                J$.____var2env[vName].unshift(J$.____context.env[0]);
-              } else {
-                J$.____var2env[vName] = [J$.____context.env[0]];
-              }
-            }
-          }
 
-          if(funcInfo && funcInfo.____Scope) {
-            getter.____outer = funcInfo.____Scope;
-          } else {
-            getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
+          if(Object.getOwnPropertyNames(getter).length > 1) {
+            J$.____context.map[J$.____context.env[0]] = getter;
+            if(funcInfo && funcInfo.____Scope) {
+              getter.____outer = funcInfo.____Scope;
+            } else {
+              getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
+            }
           }
         }
         this.LE = function (iid) {
