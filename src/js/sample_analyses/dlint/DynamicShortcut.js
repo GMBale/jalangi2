@@ -22,6 +22,7 @@
 (function (sandbox) {
     function MyAnalysis () {
         J$.____path = [];
+        let newLoc = 10000000;
         var trueBranches = {};
         var falseBranches = {};
         var fs = require('fs');
@@ -80,17 +81,13 @@
         }
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
-          if(iid === 217577) {
-            print(iid);
-            print(J$.____refMap.get(f));
-          }
-          J$.____path.push("invokeFunPre: " + iid);
           let prop = "Call";
           if(isConstructor) {
             prop = "Construct";
             J$.____isConstructor = iidMap[iid][prop][5] + ":" + J$.____context.tracePartition.ToString();
           }
           J$.____argumentsLoc = iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString();
+          J$.____path.push("invokeFunPre: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc);
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
             J$.____context.env.unshift(iidMap[iid][prop][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
@@ -107,6 +104,7 @@
         }
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
+          J$.____path.push("invokeFun: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc);
           J$.____isConstructor = undefined;
           J$.____argumentsLoc = undefined;
           let prop = "Call";
@@ -163,6 +161,7 @@
           J$.____stack.push(iid);
 
           // arguments
+          if(J$.____argumentsLoc === undefined) J$.____argumentsLoc = "#" + (++newLoc) + ":" + J$.____context.tracePartition.ToString();
           J$.____heap[J$.____argumentsLoc] = args;
           if(!J$.____refMap.has(args)) {
             J$.____refMap.set(args, J$.____argumentsLoc);
