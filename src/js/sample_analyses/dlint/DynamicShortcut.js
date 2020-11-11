@@ -70,7 +70,7 @@
               });
 
               let prototype = val.prototype;
-              let loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
+              const loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
               J$.____heap[loc] = prototype;
               if(!J$.____refMap.has(prototype)) {
                 J$.____refMap.set(prototype, loc);
@@ -115,6 +115,7 @@
           }
           if (result !== null && ["object", "function"].indexOf(typeof result) >= 0) {
             if(!J$.____refMap.has(result)) {
+
               let fid;
               if (isConstructor) {
                 fid = J$.____funcInfo.get(f).____Construct;
@@ -122,11 +123,13 @@
                 fid = J$.____funcInfo.get(f).____Call;
               }
 
-              let loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
+              const loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
+
               J$.____heap[loc] = result;
               J$.____refMap.set(result, loc);
             }
           }
+
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
             const getter = J$.____context.env.shift();
             for(let tv in getter) {
@@ -150,7 +153,7 @@
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
           J$.____stack.pop(iid);
           if(wrappedExceptionVal !== undefined) {
-            if(wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
+            if(wrappedExceptionVal.exception.message && wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
               throw wrappedExceptionVal.exception;
             }
           }
