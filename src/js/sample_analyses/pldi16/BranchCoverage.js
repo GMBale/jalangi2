@@ -22,7 +22,7 @@
         }
 
         this.invokeFunPre = function(iid) {
-          J$.____path.push("invokeFunPre: " + iid);
+          //J$.____path.push("invokeFunPre: " + iid);
         }
 
         this.conditional = function (iid, result) {
@@ -34,6 +34,9 @@
         };
 
         this.endExecution = function () {
+            //sandbox.log("STACK");
+            //sandbox.log(J$.____path.join("\n"));
+            //sandbox.log("PATH");
             //sandbox.log(J$.____path.join("\n"));
             print(trueBranches, "True");
             print(falseBranches, "False");

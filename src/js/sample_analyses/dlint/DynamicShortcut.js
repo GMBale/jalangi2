@@ -86,8 +86,9 @@
             prop = "Construct";
             J$.____isConstructor = iidMap[iid][prop][5] + ":" + J$.____context.tracePartition.ToString();
           }
-          J$.____argumentsLoc = iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString();
-          J$.____path.push("invokeFunPre: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc);
+          J$.____argumentsLoc.push(iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString());
+          J$.____path.push("invokeFunPre: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
+          //if(J$.____path.length > 20000) throw new Error(J$.____path.slice(J$.____path.length - 100).join("\n"));
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
             J$.____context.env.unshift(iidMap[iid][prop][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
@@ -104,9 +105,9 @@
         }
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod) {
-          J$.____path.push("invokeFun: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc);
+          J$.____path.push("invokeFun: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
           J$.____isConstructor = undefined;
-          J$.____argumentsLoc = undefined;
+          J$.____argumentsLoc.pop();
           let prop = "Call";
           if(isConstructor) {
             prop = "Construct";
@@ -148,6 +149,18 @@
           }
         }
 
+        this.read = function (iid, name, val, isGlobal, isScriptLocal) {
+          if(name === "arguments") {
+            //arguments
+            //if(J$.____argumentsLoc === undefined) J$.____argumentsLoc = "#" + (++newLoc) + ":" + J$.____context.tracePartition.ToString();
+            const loc = J$.____argumentsLoc[J$.____argumentsLoc.length - 1];
+            if(!J$.____refMap.has(val)) {
+              J$.____heap[loc] = val;
+              J$.____refMap.set(val, loc);
+            }
+          }
+        }
+
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
           J$.____stack.pop(iid);
           if(wrappedExceptionVal !== undefined) {
@@ -159,13 +172,6 @@
         this.functionEnter = function (iid, f, dis, args, getter) {
           J$.____path.push(iid);
           J$.____stack.push(iid);
-
-          // arguments
-          if(J$.____argumentsLoc === undefined) J$.____argumentsLoc = "#" + (++newLoc) + ":" + J$.____context.tracePartition.ToString();
-          J$.____heap[J$.____argumentsLoc] = args;
-          if(!J$.____refMap.has(args)) {
-            J$.____refMap.set(args, J$.____argumentsLoc);
-          }
 
           // this 
           if(J$.____isConstructor) {
