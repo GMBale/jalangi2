@@ -144,8 +144,6 @@
 
         this.read = function (iid, name, val, isGlobal, isScriptLocal) {
           if(name === "arguments") {
-            //arguments
-            //if(J$.____argumentsLoc === undefined) J$.____argumentsLoc = "#" + (++newLoc) + ":" + J$.____context.tracePartition.ToString();
             const loc = J$.____argumentsLoc[J$.____argumentsLoc.length - 1];
             if(!J$.____refMap.has(val)) {
               J$.____heap[loc] = val;
@@ -185,13 +183,11 @@
             J$.____visitedEntryControlPoints.add(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
           }
 
-          if(Object.getOwnPropertyNames(getter).length > 1) {
-            J$.____context.map[J$.____context.env[0]] = getter;
-            if(funcInfo && funcInfo.____Scope) {
-              getter.____outer = funcInfo.____Scope;
-            } else {
-              getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
-            }
+          J$.____context.map[J$.____context.env[0]] = getter;
+          if(funcInfo && funcInfo.____Scope) {
+            getter.____outer = funcInfo.____Scope;
+          } else {
+            getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
           }
         }
         this.LE = function (iid) {
