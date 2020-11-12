@@ -185,9 +185,9 @@
 
           J$.____context.map[J$.____context.env[0]] = getter;
           if(funcInfo && funcInfo.____Scope) {
-            getter.____outer = funcInfo.____Scope;
+            Object.defineProperty(getter, "____outer", { value: funcInfo.____Scope, writable: true, enumerable: false, configurable: true });
           } else {
-            getter.____outer = "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]";
+            Object.defineProperty(getter, "____outer", { value: "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]", writable: true, enumerable: false, configurable: true });
           }
         }
         this.LE = function (iid) {
