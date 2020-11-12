@@ -57,7 +57,10 @@
           if(val !== null && ["object", "function"].includes(ty)) {
             const loc = iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString();
             if(!J$.____refMap.has(val)) {
-              J$.____heap[loc] = val;
+              if(J$.____heap[loc]) 
+                J$.____heap[loc].push(val);
+              else
+                J$.____heap[loc] = [val];
               J$.____refMap.set(val, loc);
             }
 
@@ -71,7 +74,10 @@
               let prototype = val.prototype;
               const loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
               if(!J$.____refMap.has(prototype)) {
-                J$.____heap[loc] = prototype;
+                if(J$.____heap[loc]) 
+                  J$.____heap[loc].push(prototype);
+                else
+                  J$.____heap[loc] = [prototype];
                 J$.____refMap.set(prototype, loc);
               }
             }
@@ -122,7 +128,10 @@
 
               const loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
 
-              J$.____heap[loc] = result;
+              if(J$.____heap[loc]) 
+                J$.____heap[loc].push(result);
+              else
+                J$.____heap[loc] = [result];
               J$.____refMap.set(result, loc);
             }
           }
@@ -146,7 +155,10 @@
           if(name === "arguments") {
             const loc = J$.____argumentsLoc[J$.____argumentsLoc.length - 1];
             if(!J$.____refMap.has(val)) {
-              J$.____heap[loc] = val;
+              if(J$.____heap[loc]) 
+                J$.____heap[loc].push(val);
+              else
+                J$.____heap[loc] = [val];
               J$.____refMap.set(val, loc);
             }
           }
@@ -174,8 +186,12 @@
           // this 
           if(J$.____isConstructor) {
             if(!J$.____refMap.has(dis)) {
-              J$.____heap[J$.____isConstructor] = dis;
-              J$.____refMap.set(dis, J$.____isConstructor);
+              const loc = J$.____isConstructor;
+              if(J$.____heap[loc]) 
+                J$.____heap[loc].push(dis);
+              else
+                J$.____heap[loc] = [dis];
+              J$.____refMap.set(dis, loc);
             }
           }
           let funcInfo = J$.____funcInfo.get(f);
@@ -183,7 +199,9 @@
             J$.____visitedEntryControlPoints.add(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
           }
 
-          J$.____context.map[J$.____context.env[0]] = getter;
+          const envLoc = J$.____context.env[0];
+          if(J$.____context.map[envLoc]) J$.____context.map[envLoc].push(getter);
+          else J$.____context.map[envLoc] = [getter];
           if(funcInfo && funcInfo.____Scope) {
             Object.defineProperty(getter, "____outer", { value: funcInfo.____Scope, writable: true, enumerable: false, configurable: true });
           } else {
