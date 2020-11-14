@@ -22,6 +22,8 @@
     function ChainedAnalyses() {
 
         function clientAnalysisException(e) {
+            if(J$.analysisException) throw e;
+            J$.analysisException = true;
             console.error("analysis exception!!!");
             console.error(e.stack);
             throw e;
