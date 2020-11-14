@@ -95,6 +95,9 @@
               J$.____context.tracePartition[0].callsiteList.unshift(J$.__builtinInfo.callBId);
             } else if(f === Function.prototype.apply) {
               J$.____context.tracePartition[0].callsiteList.unshift(J$.__builtinInfo.applyBId);
+            } else if(f === Array.prototype.every) {
+              J$.____context.tracePartition[1].iterList.unshift(J$.__builtinInfo.everyLId + "(0)");
+              J$.____everyCount = 0;
             }
           }
         }
@@ -135,6 +138,10 @@
               const fid = +last.substring(0, last.indexOf(":"));
               if(fid < 0) J$.____context.tracePartition.callsiteList.shift();
             }
+            if(f === Array.prototype.every) {
+              delete J$.____everyCount;
+              J$.____context.tracePartition[1].iterList.shift();
+            }
           }
         }
 
@@ -151,13 +158,19 @@
           const info = J$.____stack.pop();
           J$.____envs.shift();
 
-          if(J$.____context.tracePartition[1].iterList.length > info.iterLength) {
-            J$.____context.tracePartition[1].iterList.length = info.iterLength;
+          const diff = J$.____context.tracePartition[1].iterList.length - info.iterLength
+          if(diff > 0) {
+            J$.____context.tracePartition[1].iterList.splice(0, diff);
           }
           if(wrappedExceptionVal !== undefined) {
             if(wrappedExceptionVal.exception.message && wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
               throw wrappedExceptionVal.exception;
             }
+          }
+          if("____everyCount" in J$) {
+            ++J$.____everyCount;
+            var cur = J$.____context.tracePartition[1].iterList[0];
+            J$.____context.tracePartition[1].iterList[0] = J$.substring.call(cur, 0, J$.lastIndexOf.call(cur, "(")) + "(" + J$.____everyCount + ")";
           }
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
@@ -167,6 +180,11 @@
             iid,
             iterLength: J$.____context.tracePartition[1].iterList.length,
           });
+
+          if("____everyCount" in J$) {
+            J$.____context.envLocs.shift();
+            J$.____context.envLocs.unshift("#" + J$.__builtinInfo.everyBId + ":" + J$.____context.tracePartition.ToString());
+          }
 
           // this 
           if(J$.____isConstructor) {
@@ -199,7 +217,7 @@
         this.LI = function (iter) {
           if(J$.____context.tracePartition.length) {
             var cur = J$.____context.tracePartition[1].iterList[0];
-            J$.____context.tracePartition[1].iterList[0] = cur.substring(0, cur.lastIndexOf("(")) + "(" + iter + ")";
+            J$.____context.tracePartition[1].iterList[0] = J$.substring.call(cur, 0, J$.lastIndexOf.call(cur, "(")) + "(" + iter + ")";
           }
         }
 
