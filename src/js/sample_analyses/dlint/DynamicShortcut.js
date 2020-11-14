@@ -57,10 +57,6 @@
           if(val !== null && ["object", "function"].includes(ty)) {
             const loc = iidMap[iid][1] + ":" + J$.____context.tracePartition.ToString();
             if(!J$.____refMap.has(val)) {
-              if(J$.____heap[loc]) 
-                J$.____heap[loc].push(val);
-              else
-                J$.____heap[loc] = [val];
               J$.____refMap.set(val, loc);
             }
 
@@ -68,16 +64,12 @@
               J$.____funcInfo.set(val, {
                 "____Call": +iidMap[iid][2],
                 "____Construct": +iidMap[iid][2],
-                "____Scope": J$.____context.env[0]
+                "____Outer": J$.____envs[0]
               });
 
               let prototype = val.prototype;
               const loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
               if(!J$.____refMap.has(prototype)) {
-                if(J$.____heap[loc]) 
-                  J$.____heap[loc].push(prototype);
-                else
-                  J$.____heap[loc] = [prototype];
                 J$.____refMap.set(prototype, loc);
               }
             }
@@ -92,9 +84,8 @@
           }
           J$.____argumentsLoc.push(iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString());
           J$.____path.push("invokeFunPre: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
-          //if(J$.____path.length > 20000) throw new Error(J$.____path.slice(J$.____path.length - 100).join("\n"));
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
-            J$.____context.env.unshift(iidMap[iid][prop][1] + ":" + J$.____context.tracePartition.ToString());
+            J$.____context.envLocs.unshift(iidMap[iid][prop][1] + ":" + J$.____context.tracePartition.ToString());
             if(J$.____context.tracePartition.length) {
               J$.____context.tracePartition[0].callsiteList.unshift(iidMap[iid][prop][3]);
             } else {
@@ -116,7 +107,7 @@
           if(isConstructor) {
             prop = "Construct";
           }
-          if (result !== null && ["object", "function"].indexOf(typeof result) >= 0) {
+          if (result !== null && ["object", "function"].indexOf(typeof result) >= 0 && !J$.isSymbol(result)) {
             if(!J$.____refMap.has(result)) {
 
               let fid;
@@ -128,16 +119,12 @@
 
               const loc = "#" + fid + ":" + J$.____context.tracePartition.ToString();
 
-              if(J$.____heap[loc]) 
-                J$.____heap[loc].push(result);
-              else
-                J$.____heap[loc] = [result];
               J$.____refMap.set(result, loc);
             }
           }
 
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
-            J$.____context.env.shift();
+            J$.____context.envLocs.shift();
 
             if(J$.____context.tracePartition.length) {
               const last = J$.____context.tracePartition[0].callsiteList.shift();
@@ -155,10 +142,6 @@
           if(name === "arguments") {
             const loc = J$.____argumentsLoc[J$.____argumentsLoc.length - 1];
             if(!J$.____refMap.has(val)) {
-              if(J$.____heap[loc]) 
-                J$.____heap[loc].push(val);
-              else
-                J$.____heap[loc] = [val];
               J$.____refMap.set(val, loc);
             }
           }
@@ -166,6 +149,7 @@
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
           const info = J$.____stack.pop();
+          J$.____envs.shift();
 
           if(J$.____context.tracePartition[1].iterList.length > info.iterLength) {
             J$.____context.tracePartition[1].iterList.length = info.iterLength;
@@ -178,19 +162,16 @@
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
           J$.____path.push(iid);
+          J$.____envs.unshift(getter);
           J$.____stack.push({
             iid,
-            iterLength: J$.____context.tracePartition[1].iterList.length
+            iterLength: J$.____context.tracePartition[1].iterList.length,
           });
 
           // this 
           if(J$.____isConstructor) {
             if(!J$.____refMap.has(dis)) {
               const loc = J$.____isConstructor;
-              if(J$.____heap[loc]) 
-                J$.____heap[loc].push(dis);
-              else
-                J$.____heap[loc] = [dis];
               J$.____refMap.set(dis, loc);
             }
           }
@@ -199,14 +180,15 @@
             J$.____visitedEntryControlPoints.add(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
           }
 
-          const envLoc = J$.____context.env[0];
-          if(J$.____context.map[envLoc]) J$.____context.map[envLoc].push(getter);
-          else J$.____context.map[envLoc] = [getter];
-          if(funcInfo && funcInfo.____Scope) {
-            Object.defineProperty(getter, "____outer", { value: funcInfo.____Scope, writable: true, enumerable: false, configurable: true });
-          } else {
-            Object.defineProperty(getter, "____outer", { value: "#Global:Sens[(30-CFA()|LSA[i:10,j:400]())]", writable: true, enumerable: false, configurable: true });
+          if(J$.____context.envLocs.length > 0) {
+            const envLoc = J$.____context.envLocs[0];
+            J$.____context.envMap.set(getter, envLoc);
           }
+          let outer = null;
+          if(J$.____envs.length > 1) {
+            outer = J$.____envs[1];
+          }
+          J$.defineProperty(getter, "____outer", { value: outer, writable: true, enumerable: false, configurable: true });
         }
         this.LE = function (iid) {
           if(J$.____context.tracePartition.length) {
@@ -240,9 +222,6 @@
             for (var id in map) {
               if (map.hasOwnProperty(id)) {
                 const locObj = J$.iids[id];
-                if(locObj === undefined) {
-                  throw new Error(id + " " + str);
-                }
                 let loc = `(${J$.filename}:${locObj.join(":")})`;
                 sb.push(str + " branch taken at " + loc + " " + map[id] + " times");
               }
