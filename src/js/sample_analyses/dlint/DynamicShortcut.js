@@ -27,6 +27,8 @@
         var falseBranches = {};
         var fs = require('fs');
         var iidMap = JSON.parse(fs.readFileSync(__dirname + "/iidMap.json"));
+        var allCPFileName = __dirname + "/allEntryControlPoints.result";
+        fs.writeFileSync(allCPFileName, "");
         var Constants = sandbox.Constants;
         var HOP = Constants.HOP;
         var sort = Array.prototype.sort;
@@ -188,7 +190,11 @@
           });
 
           const funcInfo = J$.____funcInfo.get(f);
-          if(funcInfo) J$.____visitedEntryControlPoints.push(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
+          if(funcInfo) {
+            const ecp = J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString();
+            J$.____visitedEntryControlPoints.push(ecp);
+            fs.appendFileSync(allCPFileName, ecp + "\n");
+          }
 
           if("____everyCount" in J$) {
             J$.____context.envLocs.shift();
