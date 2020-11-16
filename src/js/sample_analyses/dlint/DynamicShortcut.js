@@ -167,6 +167,11 @@
               throw wrappedExceptionVal.exception;
             }
           }
+
+          if(info.entryCPLength < J$.____visitedEntryControlPoints.length) {
+            J$.____visitedEntryControlPoints.length = info.entryCPLength;
+          }
+
           if("____everyCount" in J$) {
             ++J$.____everyCount;
             var cur = J$.____context.tracePartition[1].iterList[0];
@@ -179,7 +184,11 @@
           J$.____stack.push({
             iid,
             iterLength: J$.____context.tracePartition[1].iterList.length,
+            entryCPLength: J$.____visitedEntryControlPoints.length
           });
+
+          const funcInfo = J$.____funcInfo.get(f);
+          if(funcInfo) J$.____visitedEntryControlPoints.push(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
 
           if("____everyCount" in J$) {
             J$.____context.envLocs.shift();
@@ -193,11 +202,6 @@
               J$.____refMap.set(dis, loc);
             }
           }
-          let funcInfo = J$.____funcInfo.get(f);
-          if(funcInfo) {
-            J$.____visitedEntryControlPoints.add(J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString());
-          }
-
           if(J$.____context.envLocs.length > 0) {
             const envLoc = J$.____context.envLocs[0];
             J$.____context.envMap.set(getter, envLoc);
