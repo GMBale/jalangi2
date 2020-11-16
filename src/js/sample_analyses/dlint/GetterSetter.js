@@ -21,6 +21,7 @@
 
 (function (sandbox) {
     function MyAnalysis () {
+        J$.pass = true;
         var stack = [];
         var Constants = sandbox.Constants;
         var HOP = Constants.HOP;
@@ -39,20 +40,24 @@
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
           const top = stack[stack.length - 1];
+          console.warn(top);
           stack.push([iid, "Enter"]);
           if(top !== undefined) {
             const [tiid, tfunName, tfun] = top;
             if(tfunName !== "FunPre") {
-              if(tfun !== Array.prototype.every) {
-                console.warn(tfun);
-                throw new Error(stack.map(([tiid, tfun]) => [tiid, tfun]).join("\n"));
-              }
+              console.warn(tfun);
+              J$.pass = false;
+              throw new Error(stack.map(([tiid, tfun]) => [tiid, tfun]).join("\n"));
             }
           }
         }
 
         this.endExecution = function () {
-          console.log("PASS");
+          if(J$.pass) {
+            console.log("PASS");
+          } else {
+            console.log("FAIL");
+          }
         };
     }
     sandbox.analysis = new MyAnalysis();
