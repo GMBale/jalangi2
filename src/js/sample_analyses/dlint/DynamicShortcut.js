@@ -22,7 +22,7 @@
 (function (sandbox) {
     function MyAnalysis () {
         J$.____path = [];
-        let newLoc = 10000000;
+        const top = (function (){return this;})();
         var trueBranches = {};
         var falseBranches = {};
         var fs = require('fs');
@@ -206,7 +206,7 @@
             const envLoc = J$.____context.envLocs[0];
             J$.____context.envMap.set(getter, envLoc);
           }
-          let outer = null;
+          let outer = top;
           if(J$.____envs.length > 1) {
             outer = J$.____envs[1];
           }
