@@ -25,6 +25,8 @@
         const top = (function (){return this;})();
         var trueBranches = {};
         var falseBranches = {};
+        var fails = new Set();
+        var builtins = new Set();
         var fs = require('fs');
         var iidMap = JSON.parse(fs.readFileSync(__dirname + "/iidMap.json"));
         var allCPFileName = __dirname + "/allEntryControlPoints.result";
@@ -80,10 +82,15 @@
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod) {
           let prop = "Call";
+          const info = J$.____funcInfo.get(f);
+          let fid;
+          if(info) fid = info.____Call;
           if(isConstructor) {
             prop = "Construct";
             J$.____isConstructor = iidMap[iid][prop][5] + ":" + J$.____context.tracePartition.ToString();
+            if(info) fid = info.____Constrcut;
           }
+          if(fid < 0) builtins.add(fid);
           J$.____argumentsLoc.push(iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString());
           J$.____path.push("invokeFunPre: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
@@ -181,6 +188,10 @@
           }
         }
         this.functionEnter = function (iid, f, dis, args, getter) {
+          if(f.name === "fail") {
+            const fid = J$.____funcInfo.get(f).____Call;
+            fails.add(J$.____context.tracePartition.tpToString());
+          }
           J$.____path.push(iid);
           J$.____envs.unshift(getter);
           J$.____stack.push({
@@ -255,6 +266,8 @@
               }
             }
           }
+          fails.forEach((f) => sb.push("FAIL : " + f));
+          builtins.forEach((f) => sb.push("BUILTIN : " + f));
           return sb.join("\n");
         };
     }
