@@ -35,6 +35,7 @@
         var HOP = Constants.HOP;
         var sort = Array.prototype.sort;
 
+
         this.binary = function (iid, op, left, right, isOpAssign, isSwitchCaseComparison, isComputed) {
           if (["object", "function"].indexOf(typeof left) >= 0) {
             if(null !== left) {
@@ -91,6 +92,22 @@
             if(info) fid = info.____Constrcut;
           }
           if(fid < 0) builtins.add(fid);
+          let highOrder;
+          if(f === Function.prototype.call) {
+            highOrder = base;
+          } else if(f === Function.prototype.apply) {
+            highOrder = base;
+          } else if(f === Array.prototype.every) {
+            highOrder = args[0];
+          }
+          if(highOrder) {
+            const info = J$.____funcInfo.get(highOrder);
+            if(info) {
+              const fid = info.____Call;
+              if(fid < 0) builtins.add(fid);
+            }
+          }
+
           J$.____argumentsLoc.push(iidMap[iid][prop][4] + ":" + J$.____context.tracePartition.ToString());
           J$.____path.push("invokeFunPre: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
           if(iidMap[iid][prop] && iidMap[iid][prop].length > 1) {
