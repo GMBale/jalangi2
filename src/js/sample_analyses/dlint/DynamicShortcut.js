@@ -266,8 +266,8 @@
               }
             }
           }
-          fails.forEach((f) => sb.push("FAIL : " + f));
-          builtins.forEach((f) => sb.push("BUILTIN : " + f));
+          fails.forEach((f) => sb.push("FAIL: " + f));
+          builtins.forEach((f) => sb.push("BUILTIN: " + f));
           return sb.join("\n");
         };
     }
