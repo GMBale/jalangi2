@@ -69,7 +69,7 @@
               J$.____funcInfo.set(val, {
                 "____Call": +iidMap[iid][2],
                 "____Construct": +iidMap[iid][2],
-                "____Outer": J$.____envs[0]
+                "____Scope": J$.____envs[0]//J$.____stack[0].env
               });
 
               let prototype = val.prototype;
@@ -182,7 +182,7 @@
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
           const info = J$.____stack.pop();
-          J$.____envs.shift();
+          J$.____envs.pop();
 
           const diff = J$.____context.tracePartition[1].iterList.length - info.iterLength
           if(diff > 0) {
@@ -213,16 +213,18 @@
           J$.____envs.unshift(getter);
           J$.____stack.push({
             iid,
+            env: getter,
             iterLength: J$.____context.tracePartition[1].iterList.length,
             entryCPLength: J$.____visitedEntryControlPoints.length
           });
 
           const funcInfo = J$.____funcInfo.get(f);
-          if(funcInfo) {
-            const ecp = J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString();
-            J$.____visitedEntryControlPoints.push(ecp);
-            fs.appendFileSync(allCPFileName, ecp + "\n");
-          }
+          if(!funcInfo) throw new Error("Unknown function!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+          J$.defineProperty(getter, "____outer", { value: funcInfo.____Scope, writable: true, enumerable: false, configurable: true });
+
+          const ecp = J$.____funcInfo.get(f).____Call + "+" + J$.____context.tracePartition.tpToString();
+          J$.____visitedEntryControlPoints.push(ecp);
+          fs.appendFileSync(allCPFileName, ecp + "\n");
 
           if("____everyCount" in J$) {
             J$.____context.envLocs.shift();
@@ -240,11 +242,6 @@
             const envLoc = J$.____context.envLocs[0];
             J$.____context.envMap.set(getter, envLoc);
           }
-          let outer = top;
-          if(J$.____envs.length > 1) {
-            outer = J$.____envs[1];
-          }
-          J$.defineProperty(getter, "____outer", { value: outer, writable: true, enumerable: false, configurable: true });
         }
         this.LE = function (iid) {
           if(J$.____context.tracePartition.length) {
