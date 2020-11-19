@@ -262,6 +262,11 @@
         }
 
         this.conditional = function (iid, result) {
+          if (["object", "function"].indexOf(typeof result) >= 0) {
+            if(null !== result) {
+              "____#" in result;
+            }
+          }
           if (result)
             trueBranches[iid] = (trueBranches[iid]|0) + 1;
           else
