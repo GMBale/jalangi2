@@ -69,11 +69,12 @@
               J$.____funcInfo.set(val, {
                 "____Call": +iidMap[iid][2],
                 "____Construct": +iidMap[iid][2],
-                "____Scope": J$.____envs[0]//J$.____stack[0].env
+                "____Scope": J$.____stack[J$.____stack.length - 1].env
               });
 
               let prototype = val.prototype;
               const loc = iidMap[iid][3] + ":" + J$.____context.tracePartition.ToString();
+
               if(!J$.____refMap.has(prototype)) {
                 J$.____refMap.set(prototype, loc);
               }
@@ -182,7 +183,6 @@
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
           const info = J$.____stack.pop();
-          J$.____envs.pop();
 
           const diff = J$.____context.tracePartition[1].iterList.length - info.iterLength
           if(diff > 0) {
@@ -210,7 +210,6 @@
             fails.add(J$.____context.tracePartition.tpToString());
           }
           J$.____path.push(iid);
-          J$.____envs.unshift(getter);
           J$.____stack.push({
             iid,
             env: getter,
