@@ -92,7 +92,17 @@
             J$.____isConstructor = iidMap[iid][prop][5] + ":" + J$.____context.tracePartition.ToString();
             if(info) fid = info.____Constrcut;
           }
-          if(fid < 0) builtins.add(fid);
+          if(fid < 0) {
+            builtins.add(fid);
+            if (typeof base === "function") {
+              "____#" in base;
+            }
+            [...args].forEach((arg) => {
+              if (typeof arg === "funciton") {
+                "____#" in arg;
+              }
+            });
+          }
           let highOrder;
           if(f === Function.prototype.call) {
             highOrder = base;
