@@ -30,6 +30,7 @@ var parser = new argparse.ArgumentParser({
     description: "Command-line utility to perform Jalangi2's analysis"
 });
 parser.addArgument(['--analysis'], { help: "absolute path to analysis file to run", action:'append'});
+parser.addArgument(['--json'], { help: "absolute path for json files", action:'append'});
 parser.addArgument(['--initParam'], { help: "initialization parameter for analysis, specified as key:value", action:'append'});
 parser.addArgument(['script_and_args'], {
     help: "script to record and CLI arguments for that script",
@@ -58,6 +59,13 @@ function runAnalysis(initParam) {
         args.analysis.forEach(function (src) {
             sb.push(fs.readFileSync(path.join(__dirname, src)).toString());
             //require(path.resolve(src));
+        });
+    }
+    if (args.json) {
+        args.json.forEach(function (src) {
+            const base = path.basename(src);
+            const idx = base.lastIndexOf(".");
+            sb.push(`J$.____${base.substring(0, idx)} = ${fs.readFileSync(src).toString()};`);
         });
     }
 }
