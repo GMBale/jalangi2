@@ -24,6 +24,9 @@
         function clientAnalysisException(e) {
             if(J$.analysisException) throw e;
             J$.analysisException = true;
+            if(e.message && e.message.startsWith("[AccessDetected] ")) {
+                throw e;
+            }
             console.error("analysis exception!!!");
             console.error(e.stack);
             throw e;

@@ -199,7 +199,7 @@
             J$.____context.tracePartition[1].iterList.splice(0, diff);
           }
           if(wrappedExceptionVal !== undefined) {
-            if(wrappedExceptionVal.exception.message && wrappedExceptionVal.exception.message.endsWith("a proxy that has been revoked")) {
+            if(wrappedExceptionVal.exception.message && wrappedExceptionVal.exception.message.startsWith("[AccessDetected] ")) {
               throw wrappedExceptionVal.exception;
             }
           }
