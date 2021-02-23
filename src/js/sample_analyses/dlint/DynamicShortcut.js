@@ -49,12 +49,35 @@
           }
         }
 
-        this.unaryPre = function(iid, op, left){
+        this.unaryPre = function(iid, op, left) {
           if (["object", "function"].indexOf(typeof left) >= 0) {
             if(null !== left) {
               "____#" in left;
             }
           }
+        };
+
+        this.write = function(iid, name, val, lhs, isGlobal) {
+          if (isGlobal) {
+            J$.____isGlobalMutated = true;
+          } else {
+            for(let getter = J$.____stack[J$.____stack.length - 1].env; getter; getter = getter.____outer) {
+              for (let v in getter) {
+                let vName = v;
+                if (v.startsWith("<>")) {
+                  vName = v.substring(2, v.lastIndexOf("<>"));
+                }
+                if (vName === name) {
+                  J$.____mutatedGetters.add(getter);
+                  return;
+                }
+              }
+            }
+          }
+        };
+
+        this.putFieldPre = function(iid, base, offset, val) {
+          J$.____mutatedObjects.add(base);
         };
 
         this.literal = function (iid, val, hasGetterSetter) {
@@ -143,6 +166,9 @@
           J$.____path.push("invokeFun: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
           J$.____isConstructor = undefined;
           J$.____argumentsLoc.pop();
+          if (J$.____mutatingBuiltinRefs.indexOf(f) !== -1) {
+            J$.____mutatedObjects.add(base);
+          }
           let prop = "Call";
           if(isConstructor) {
             prop = "Construct";
