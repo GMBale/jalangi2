@@ -125,12 +125,18 @@
                 "____#" in arg;
               }
             });
+            if (J$.____mutatingBuiltinFIds.indexOf(fid) !== -1) {
+              J$.____mutatedObjects.add(base);
+            }
           }
           let highOrder;
+          let mutatedThis;
           if(f === Function.prototype.call) {
             highOrder = base;
+            mutatedThis = args[0];
           } else if(f === Function.prototype.apply) {
             highOrder = base;
+            mutatedThis = args[0];
           } else if(f === Array.prototype.every) {
             highOrder = args[0];
           }
@@ -139,6 +145,11 @@
             if(info) {
               const fid = info.____Call;
               if(fid < 0) builtins.add(fid);
+              if (mutatedThis !== undefined) {
+                if (J$.____mutatingBuiltinFIds.indexOf(fid) !== -1) {
+                  J$.____mutatedObjects.add(mutatedThis);
+                }
+              }
             }
           }
 
@@ -166,9 +177,6 @@
           J$.____path.push("invokeFun: " + iid + " " + J$.____refMap.get(f) + " " + J$.____argumentsLoc[J$.____argumentsLoc.length - 1]);
           J$.____isConstructor = undefined;
           J$.____argumentsLoc.pop();
-          if (J$.____mutatingBuiltinRefs.indexOf(f) !== -1) {
-            J$.____mutatedObjects.add(base);
-          }
           let prop = "Call";
           if(isConstructor) {
             prop = "Construct";
