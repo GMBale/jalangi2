@@ -51,6 +51,10 @@ if (typeof J$ === 'undefined') {
     var SPECIAL_PROP_IID = sandbox.Constants.SPECIAL_PROP_IID;
     sandbox.counter = {};
 
+    function increase(iid) {
+      sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
+    }
+
     function getPropSafe(base, prop){
       if(base === null || base === undefined){
         return undefined;
@@ -223,6 +227,12 @@ if (typeof J$ === 'undefined') {
                 result = aret.result;
             }
         }
+
+        if ((sandbox.analysis && sandbox.analysis.invokeFunPre) || (sandbox.analysis && sandbox.analysis.invokeFun)) {
+            increase(iid);
+        } else {
+            sandbox.counter[iid] = 0;
+        }
         return result;
     }
 
@@ -270,10 +280,13 @@ if (typeof J$ === 'undefined') {
             }
         }
         if (sandbox.analysis && sandbox.analysis.literal) {
+            increase(iid);
             aret = sandbox.analysis.literal(iid, val, hasGetterSetter);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return (lastComputedValue = val);
     }
@@ -282,10 +295,13 @@ if (typeof J$ === 'undefined') {
     function H(iid, val) {
         var aret;
         if (sandbox.analysis && sandbox.analysis.forinObject) {
+            increase(iid);
             aret = sandbox.analysis.forinObject(iid, val);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return val;
     }
@@ -300,6 +316,7 @@ if (typeof J$ === 'undefined') {
             argIndex++;
         }
         if (!bFlags[1] && sandbox.analysis && sandbox.analysis.declare) {
+            increase(iid);
             if (bFlags[0] && argIndex > 1) {
                 aret = sandbox.analysis.declare(iid, name, val, bFlags[0], argIndex - 2, bFlags[2]);
             } else {
@@ -308,6 +325,8 @@ if (typeof J$ === 'undefined') {
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return val;
     }
@@ -335,6 +354,11 @@ if (typeof J$ === 'undefined') {
             if (aret) {
                 val = aret.result;
             }
+        }
+        if ((sandbox.analysis && sandbox.analysis.getFieldPre) || (sandbox.analysis && sandbox.analysis.getField)) {
+            increase(iid);
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return (lastComputedValue = val);
     }
@@ -364,6 +388,11 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         }
+        if ((sandbox.analysis && sandbox.analysis.putFieldPre) || (sandbox.analysis && sandbox.analysis.putField)) {
+            increase(iid);
+        } else {
+            sandbox.counter[iid] = 0;
+        }
         return (lastComputedValue = val);
     }
 
@@ -375,10 +404,13 @@ if (typeof J$ === 'undefined') {
         var bFlags = decodeBitPattern(flags, 2); // [isGlobal, isScriptLocal]
 
         if (sandbox.analysis && sandbox.analysis.read) {
+            increase(iid);
             aret = sandbox.analysis.read(iid, name, val, bFlags[0], bFlags[1]);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return (lastComputedValue = val);
     }
@@ -388,10 +420,13 @@ if (typeof J$ === 'undefined') {
         var bFlags = decodeBitPattern(flags, 3); //[isGlobal, isScriptLocal, isDeclaration]
         var aret;
         if (sandbox.analysis && sandbox.analysis.write) {
+            increase(iid);
             aret = sandbox.analysis.write(iid, name, val, lhs, bFlags[0], bFlags[1]);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         if (!bFlags[2]) {
             return (lastComputedValue = val);
@@ -404,10 +439,13 @@ if (typeof J$ === 'undefined') {
     // with statement
     function Wi(iid, val) {
         if (sandbox.analysis && sandbox.analysis._with) {
+            increase(iid);
             aret = sandbox.analysis._with(iid, val);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return val;
     }
@@ -421,10 +459,13 @@ if (typeof J$ === 'undefined') {
     function Th(iid, val) {
         var aret;
         if (sandbox.analysis && sandbox.analysis._throw) {
+            increase(iid);
             aret = sandbox.analysis._throw(iid, val);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return (lastComputedValue = val);
     }
@@ -433,10 +474,13 @@ if (typeof J$ === 'undefined') {
     function Rt(iid, val) {
         var aret;
         if (sandbox.analysis && sandbox.analysis._return) {
+            increase(iid);
             aret = sandbox.analysis._return(iid, val);
             if (aret) {
                 val = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         returnStack.pop();
         returnStack.push(val);
@@ -459,7 +503,10 @@ if (typeof J$ === 'undefined') {
         wrappedExceptionVal = undefined;
         updateSid(f);
         if (sandbox.analysis && sandbox.analysis.functionEnter) {
+            increase(iid);
             sandbox.analysis.functionEnter(iid, f, dis, args);
+        } else {
+            sandbox.counter[iid] = 0;
         }
     }
 
@@ -469,12 +516,15 @@ if (typeof J$ === 'undefined') {
 
         returnVal = returnStack.pop();
         if (sandbox.analysis && sandbox.analysis.functionExit) {
+            increase(iid);
             aret = sandbox.analysis.functionExit(iid, returnVal, wrappedExceptionVal);
             if (aret) {
                 returnVal = aret.returnVal;
                 wrappedExceptionVal = aret.wrappedExceptionVal;
                 isBacktrack = aret.isBacktrack;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         rollBackSid();
         if (!isBacktrack) {
@@ -494,7 +544,10 @@ if (typeof J$ === 'undefined') {
     function Se(iid, val, origFileName) {
         createAndAssignNewSid();
         if (sandbox.analysis && sandbox.analysis.scriptEnter) {
+            increase(iid);
             sandbox.analysis.scriptEnter(iid, val, origFileName);
+        } else {
+            sandbox.counter[iid] = 0;
         }
         lastComputedValue = undefined;
     }
@@ -503,11 +556,14 @@ if (typeof J$ === 'undefined') {
     function Sr(iid) {
         var tmp, aret, isBacktrack;
         if (sandbox.analysis && sandbox.analysis.scriptExit) {
+            increase(iid);
             aret = sandbox.analysis.scriptExit(iid, wrappedExceptionVal);
             if (aret) {
                 wrappedExceptionVal = aret.wrappedExceptionVal;
                 isBacktrack = aret.isBacktrack;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         rollBackSid();
         if (wrappedExceptionVal !== undefined) {
@@ -627,6 +683,12 @@ if (typeof J$ === 'undefined') {
                 result = aret.result;
             }
         }
+
+        if ((sandbox.analysis && sandbox.analysis.binaryPre) || (sandbox.analysis && sandbox.analysis.binary)) {
+            increase(iid);
+        } else {
+            sandbox.counter[iid] = 0;
+        }
         return (lastComputedValue = result);
     }
 
@@ -676,6 +738,12 @@ if (typeof J$ === 'undefined') {
                 result = aret.result;
             }
         }
+
+        if ((sandbox.analysis && sandbox.analysis.unaryPre) || (sandbox.analysis && sandbox.analysis.unary)) {
+            increase(iid);
+        } else {
+            sandbox.counter[iid] = 0;
+        }
         return (lastComputedValue = result);
     }
 
@@ -707,6 +775,7 @@ if (typeof J$ === 'undefined') {
         result = B(iid+1, "===", switchLeft, right, createBitPattern(false, false, true));
 
         if (sandbox.analysis && sandbox.analysis.conditional) {
+            increase(iid);
             aret = sandbox.analysis.conditional(iid, result);
             if (aret) {
                 if (result && !aret.result) {
@@ -715,6 +784,8 @@ if (typeof J$ === 'undefined') {
                     right = switchLeft;
                 }
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return (lastComputedValue = right);
     }
@@ -723,10 +794,13 @@ if (typeof J$ === 'undefined') {
     function C(iid, left) {
         var aret;
         if (sandbox.analysis && sandbox.analysis.conditional) {
+            increase(iid);
             aret = sandbox.analysis.conditional(iid, left);
             if (aret) {
                 left = aret.result;
             }
+        } else {
+            sandbox.counter[iid] = 0;
         }
 
         lastVal = left;
@@ -735,7 +809,10 @@ if (typeof J$ === 'undefined') {
 
     function S(iid, f) {
         if (sandbox.analysis && sandbox.analysis.runInstrumentedFunctionBody) {
+            increase(iid);
             return sandbox.analysis.runInstrumentedFunctionBody(iid, f, getPropSafe(f, SPECIAL_PROP_IID), getPropSafe(f, SPECIAL_PROP_SID));
+        } else {
+            sandbox.counter[iid] = 0;
         }
         return true;
     }
@@ -747,13 +824,23 @@ if (typeof J$ === 'undefined') {
 
     function X1(iid, val) {
         if (sandbox.analysis && sandbox.analysis.endExpression) {
+            increase(iid);
             sandbox.analysis.endExpression(iid);
+        } else {
+            sandbox.counter[iid] = 0;
         }
 
         return (lastComputedValue = val);
     }
 
     function endExecution() {
+        const fs = require('fs');
+        fs.writeFileSync("counter.json", JSON.stringify(sandbox.counter, null, 2));
+        const all = Object.entries(sandbox.counter);
+        const used = all.filter(([k, v]) => v > 0);
+        const unused = all.filter(([k, v]) => v == 0).map(([k, v]) => +k);
+        console.log(`${used.length}/${all.length} (${(used.length/all.length*100).toFixed(2)}%)`);
+        fs.writeFileSync("unused.json", JSON.stringify(unused, null, 2));
         if (sandbox.analysis && sandbox.analysis.endExecution) {
             return sandbox.analysis.endExecution();
         }
