@@ -49,6 +49,7 @@ if (typeof J$ === 'undefined') {
     var lastComputedValue;
     var SPECIAL_PROP_SID = sandbox.Constants.SPECIAL_PROP_SID;
     var SPECIAL_PROP_IID = sandbox.Constants.SPECIAL_PROP_IID;
+    sandbox.counter = {};
 
     function getPropSafe(base, prop){
       if(base === null || base === undefined){
