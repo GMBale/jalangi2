@@ -156,7 +156,7 @@ function oneScript(src) {
             break;
           case "Sr":
             node.type = "Literal";
-            node.value = true;
+            node.value = false;
             break;
           case "R":
             for (let key in copy.arguments[2]) {
@@ -180,8 +180,9 @@ function oneScript(src) {
             }
             break;
           case "N":
-            node.type = "Literal";
-            node.value = true;
+            for (let key in copy.arguments[2]) {
+              node[key] = copy.arguments[2][key];
+            }
             break;
           case "Rt":
             for (let key in copy.arguments[1]) {
@@ -228,9 +229,24 @@ function oneScript(src) {
             node.prefix = true;
             break;
           case "C":
+            for (let key in copy.arguments[1]) {
+              node[key] = copy.arguments[1][key];
+            }
+            break;
           case "C1":
+            for (let key in copy.arguments[1]) {
+              node[key] = copy.arguments[1][key];
+            }
+            break;
           case "C2":
+            for (let key in copy.arguments[1]) {
+              node[key] = copy.arguments[1][key];
+            }
+            break;
           case "_":
+            node.type = "Literal";
+            node.value = true;
+            break;
           case "X1":
             for (let key in copy.arguments[1]) {
               node[key] = copy.arguments[1][key];
