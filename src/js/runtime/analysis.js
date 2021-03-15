@@ -229,7 +229,6 @@ if (typeof J$ === 'undefined') {
         }
 
         if ((sandbox.analysis && sandbox.analysis.invokeFunPre) || (sandbox.analysis && sandbox.analysis.invokeFun)) {
-            console.log(sandbox.analysis);
             increase(iid);
         } else {
             sandbox.counter[iid] = 0;
