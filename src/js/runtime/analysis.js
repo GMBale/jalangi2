@@ -52,7 +52,14 @@ if (typeof J$ === 'undefined') {
     sandbox.counter = {};
 
     function increase(iid) {
-      sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
+      if (iid % 4 === 1) {
+        sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
+      }
+    }
+    function init(iid) {
+      if (iid % 4 === 1) {
+        sandbox.counter[iid] = 0;
+      }
     }
 
     function getPropSafe(base, prop){
@@ -231,7 +238,7 @@ if (typeof J$ === 'undefined') {
         if ((sandbox.analysis && sandbox.analysis.invokeFunPre) || (sandbox.analysis && sandbox.analysis.invokeFun)) {
             increase(iid);
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return result;
     }
@@ -286,7 +293,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = val);
     }
@@ -301,7 +308,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return val;
     }
@@ -326,7 +333,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return val;
     }
@@ -358,7 +365,7 @@ if (typeof J$ === 'undefined') {
         if ((sandbox.analysis && sandbox.analysis.getFieldPre) || (sandbox.analysis && sandbox.analysis.getField)) {
             increase(iid);
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = val);
     }
@@ -391,7 +398,7 @@ if (typeof J$ === 'undefined') {
         if ((sandbox.analysis && sandbox.analysis.putFieldPre) || (sandbox.analysis && sandbox.analysis.putField)) {
             increase(iid);
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = val);
     }
@@ -410,7 +417,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = val);
     }
@@ -426,7 +433,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         if (!bFlags[2]) {
             return (lastComputedValue = val);
@@ -445,7 +452,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return val;
     }
@@ -465,7 +472,7 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = val);
     }
@@ -474,13 +481,13 @@ if (typeof J$ === 'undefined') {
     function Rt(iid, val) {
         var aret;
         if (sandbox.analysis && sandbox.analysis._return) {
-            increase(iid);
+            //increase(iid);
             aret = sandbox.analysis._return(iid, val);
             if (aret) {
                 val = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            //init(iid);
         }
         returnStack.pop();
         returnStack.push(val);
@@ -506,7 +513,7 @@ if (typeof J$ === 'undefined') {
             increase(iid);
             sandbox.analysis.functionEnter(iid, f, dis, args);
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
     }
 
@@ -524,7 +531,7 @@ if (typeof J$ === 'undefined') {
                 isBacktrack = aret.isBacktrack;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         rollBackSid();
         if (!isBacktrack) {
@@ -544,10 +551,10 @@ if (typeof J$ === 'undefined') {
     function Se(iid, val, origFileName) {
         createAndAssignNewSid();
         if (sandbox.analysis && sandbox.analysis.scriptEnter) {
-            increase(iid);
+            //increase(iid);
             sandbox.analysis.scriptEnter(iid, val, origFileName);
         } else {
-            sandbox.counter[iid] = 0;
+            //init(iid);
         }
         lastComputedValue = undefined;
     }
@@ -563,7 +570,7 @@ if (typeof J$ === 'undefined') {
                 isBacktrack = aret.isBacktrack;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         rollBackSid();
         if (wrappedExceptionVal !== undefined) {
@@ -588,7 +595,7 @@ if (typeof J$ === 'undefined') {
     }
 
     // Binary operation
-    function B(iid, op, left, right, flags) {
+    function B(iid, op, left, right, flags, ignore) {
         var bFlags = decodeBitPattern(flags, 3); // [isComputed, isOpAssign, isSwitchCaseComparison]
         var result, aret, skip = false;
 
@@ -684,10 +691,12 @@ if (typeof J$ === 'undefined') {
             }
         }
 
-        if ((sandbox.analysis && sandbox.analysis.binaryPre) || (sandbox.analysis && sandbox.analysis.binary)) {
-            increase(iid);
-        } else {
-            sandbox.counter[iid] = 0;
+        if (!ignore) {
+            if ((sandbox.analysis && sandbox.analysis.binaryPre) || (sandbox.analysis && sandbox.analysis.binary)) {
+                increase(iid);
+            } else {
+                init(iid);
+            }
         }
         return (lastComputedValue = result);
     }
@@ -742,7 +751,7 @@ if (typeof J$ === 'undefined') {
         if ((sandbox.analysis && sandbox.analysis.unaryPre) || (sandbox.analysis && sandbox.analysis.unary)) {
             increase(iid);
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = result);
     }
@@ -772,7 +781,7 @@ if (typeof J$ === 'undefined') {
         var aret, result;
 
         // avoid iid collision; iid may not have a map in the sourcemap
-        result = B(iid+1, "===", switchLeft, right, createBitPattern(false, false, true));
+        result = B(iid+1, "===", switchLeft, right, createBitPattern(false, false, true), true);
 
         if (sandbox.analysis && sandbox.analysis.conditional) {
             increase(iid);
@@ -785,7 +794,7 @@ if (typeof J$ === 'undefined') {
                 }
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return (lastComputedValue = right);
     }
@@ -800,7 +809,7 @@ if (typeof J$ === 'undefined') {
                 left = aret.result;
             }
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
 
         lastVal = left;
@@ -812,7 +821,7 @@ if (typeof J$ === 'undefined') {
             increase(iid);
             return sandbox.analysis.runInstrumentedFunctionBody(iid, f, getPropSafe(f, SPECIAL_PROP_IID), getPropSafe(f, SPECIAL_PROP_SID));
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
         return true;
     }
@@ -827,7 +836,7 @@ if (typeof J$ === 'undefined') {
             increase(iid);
             sandbox.analysis.endExpression(iid);
         } else {
-            sandbox.counter[iid] = 0;
+            init(iid);
         }
 
         return (lastComputedValue = val);

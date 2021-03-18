@@ -141,19 +141,26 @@ function oneScript(src) {
           case "G":
             node.type = "MemberExpression"
             node.object = {};
-            node.property = {
-              type: "Identifier",
-              name: copy.arguments[2].value
-            };
             node.computed = copy.arguments[3].value !== 0;
+            if(node.computed) {
+              node.property = {};
+              for (let key in copy.arguments[2]) {
+                node.property[key] = copy.arguments[2][key];
+              }
+            } else {
+              node.property = {
+                type: "Identifier",
+                name: copy.arguments[2].value
+              };
+            }
             for (let key in copy.arguments[1]) {
               node.object[key] = copy.arguments[1][key];
             }
             break;
-          case "Se":
+          /*TODO case "Se":
             node.type = "Literal";
             node.value = true;
-            break;
+            break;*/
           case "Sr":
             node.type = "Literal";
             node.value = false;
@@ -184,11 +191,12 @@ function oneScript(src) {
               node[key] = copy.arguments[2][key];
             }
             break;
-          case "Rt":
+          /*TODO case "Rt": 
             for (let key in copy.arguments[1]) {
               node[key] = copy.arguments[1][key];
             }
             break;
+            */
           case "Th":
             for (let key in copy.arguments[1]) {
               node[key] = copy.arguments[1][key];
