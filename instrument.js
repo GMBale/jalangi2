@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const dst = path.join(__dirname, "optimized.js");
+const dst = process.argv.length >= 4 ? process.argv[3] : path.join(__dirname, "optimized.js");
 
 const src = process.argv[2];
 const acorn = require('acorn');
@@ -124,14 +124,14 @@ function oneScript(src) {
             node.left = {
               type: "MemberExpression",
               object: {},
-              property: {
-                type: "Identifier",
-                name: copy.arguments[2].value
-              },
-              computed: false
+              property: {},
+              computed: true
             };
             for (let key in copy.arguments[1]) {
               node.left.object[key] = copy.arguments[1][key];
+            }
+            for (let key in copy.arguments[2]) {
+              node.left.property[key] = copy.arguments[2][key];
             }
             node.right = {};
             for (let key in copy.arguments[3]) {
