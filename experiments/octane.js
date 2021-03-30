@@ -3,12 +3,12 @@ const path = require('path');
 const { execSync } = require('child_process');
 const checkers = {
   //"FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js",
-  "NonContiguousArray": "src/js/sample_analyses/opt/NonContiguousArray.js",
-  "TypedArray": "src/js/sample_analyses/opt/TypedArray.js",
-  "BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
-  "CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
-  "UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
-  "ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js",
+  //"NonContiguousArray": "src/js/sample_analyses/opt/NonContiguousArray.js",
+  //"TypedArray": "src/js/sample_analyses/opt/TypedArray.js",
+  //"BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
+  //"CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
+  //"UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
+  "ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
 };
 
 process.chdir(path.join(__dirname, '../'));
