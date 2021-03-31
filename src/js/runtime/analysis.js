@@ -491,6 +491,7 @@ if (typeof J$ === 'undefined') {
         }
         returnStack.pop();
         returnStack.push(val);
+        increase(iid);
         return (lastComputedValue = val);
     }
 
@@ -846,10 +847,10 @@ if (typeof J$ === 'undefined') {
         const fs = require('fs');
         fs.writeFileSync("counter.json", JSON.stringify(sandbox.counter, null, 2));
         const all = Object.entries(sandbox.counter);
-        const used = all.filter(([k, v]) => v > 0);
+        const used = all.filter(([k, v]) => v > 0).map(([k, v]) => +k);
         const unused = all.filter(([k, v]) => v == 0).map(([k, v]) => +k);
         console.log(`${used.length}/${all.length} (${(used.length/all.length*100).toFixed(2)}%)`);
-        fs.writeFileSync("unused.json", JSON.stringify(unused, null, 2));
+        fs.writeFileSync("used.json", JSON.stringify(used, null, 2));
         if (sandbox.analysis && sandbox.analysis.endExecution) {
             return sandbox.analysis.endExecution();
         }

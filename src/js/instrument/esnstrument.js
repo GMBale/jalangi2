@@ -284,6 +284,7 @@ if (typeof J$ === 'undefined') {
 //        StatCollector.suspendTimer("internalParse");
 //        StatCollector.resumeTimer("replace");
         var newAst = astUtil.transformAst(ast, visitorReplaceInExpr, undefined, undefined, true);
+        propagateUsed(newAst);
         //console.log(newAst);
 //        StatCollector.suspendTimer("replace");
         return newAst.body;
@@ -1634,7 +1635,7 @@ if (typeof J$ === 'undefined') {
         "ForStatement": funCond
     };
 
-    function addScopes(ast) {
+    function addScopes(ast, preventFlag) {
 
         function Scope(parent, isCatch) {
             this.vars = {};
@@ -1794,7 +1795,7 @@ if (typeof J$ === 'undefined') {
             }
 
         };
-        astUtil.transformAst(ast, visitorPost, visitorPre);
+        astUtil.transformAst(ast, visitorPost, visitorPre, undefined, undefined, preventFlag);
     }
 
 
@@ -1857,20 +1858,109 @@ if (typeof J$ === 'undefined') {
     }
 
     // END of Liang Gong's AST post-processor
+    function markUsed(object, usedSpan, context, noIgnore) {
+        var key, child, type, ret, newContext;
+        var children = [];
+        type = object.type;
+        for (key in object) {
+//            if (object.hasOwnProperty(key)) {
+                child = object[key];
+                if (typeof child === 'object' && child !== null && key !== "scope" && (noIgnore || !astUtil.ignoreSubAst(object))) {
+                    if ((type === 'AssignmentExpression' && key === 'left') ||
+                        (type === 'UpdateExpression' && key === 'argument') ||
+                        (type === 'UnaryExpression' && key === 'argument' && object.operator === 'delete') ||
+                        (type === 'ForInStatement' && key === 'left') ||
+                        ((type === 'FunctionExpression' || type === 'FunctionDeclaration') && key === 'id') ||
+                        (type === 'LabeledStatement' && key === 'label') ||
+                        (type === 'BreakStatement' && key === 'label') ||
+                        (type === 'CatchClause' && key === 'param') ||
+                        (type === 'ContinueStatement' && key === 'label') ||
+                        ((type === 'CallExpression' || type === 'NewExpression') &&
+                            key === 'callee' &&
+                            (object.callee.type === 'MemberExpression' ||
+                                (object.callee.type === 'Identifier' && object.callee.name === 'eval'))) ||
+                        (type === 'VariableDeclarator' && key === 'id') ||
+                        (type === 'MemberExpression' && !object.computed && key === 'property')) {
+                        newContext = astUtil.CONTEXT.IGNORE;
+                    } else if (type === 'ObjectExpression' && key === 'properties') {
+                        newContext = astUtil.CONTEXT.OEXP;
+                    } else if ((type === 'FunctionExpression' || type === 'FunctionDeclaration') && key === 'params') {
+                        newContext = astUtil.CONTEXT.PARAMS;
+                    } else if (context === astUtil.CONTEXT.OEXP) {
+                        newContext = astUtil.CONTEXT.OEXP2;
+                    } else if (context === astUtil.CONTEXT.OEXP2 && key === 'key') {
+                        newContext = astUtil.CONTEXT.IGNORE;
+                    } else if (context === astUtil.CONTEXT.PARAMS) {
+                        newContext = astUtil.CONTEXT.IGNORE;
+                    } else if (object.key && key === 'value' && object.kind === 'get') {
+                        newContext = astUtil.CONTEXT.GETTER;
+                    } else if (object.key && key === 'value' && object.kind === 'set') {
+                        newContext = astUtil.CONTEXT.SETTER;
+                    } else if (type === 'CallExpression' && key === 'callee' && child.type === 'Identifier' && child.name === 'eval') {
+                        newContext = astUtil.CONTEXT.IGNORE;
+                    } else if (type === 'UnaryExpression' && key === 'argument' && object.operator === 'typeof' && child.type === 'Identifier') {
+                        newContext = astUtil.CONTEXT.TYPEOF;
+                    } else {
+                        newContext = astUtil.CONTEXT.RHS;
+                    }
+                    if (key !== 'bodyOrig') {
+                        children.push(child);
+                        object[key] = markUsed(child, usedSpan, newContext, noIgnore);
+                    }
+                }
+//            }
+        }
 
-    function transformString(code, visitorsPost, visitorsPre) {
+        const { loc } = object;
+        if (loc) {
+            key = [loc.start.line, loc.start.column + 1, loc.end.line, loc.end.column + 1].join(",");
+            if (key in usedSpan) {
+                object.__used__ = true;
+                ret = object;
+            } else {
+                //console.log("-----------------------------------------------------------------------");
+                //console.log(object.type);
+                if (object.type === "FunctionDeclaration") {
+                    //console.log(children);
+                }
+                if (children.some((child) => "__used__" in child)) object.__used__ = true;
+                ret = object;
+            }
+        } else {
+            if (children.some((child) => "__used__" in child)) object.__used__ = true;
+            ret = object;
+        }
+        return ret;
+    }
+
+    function transformString(code, visitorsPost, visitorsPre, prevent) {
 //         StatCollector.resumeTimer("parse");
 //        console.time("parse")
 //        var newAst = esprima.parse(code, {loc:true, range:true});
         var newAst = acorn.parse(code, {locations: true, ecmaVersion: 6 });
+        const preventFlag = prevent.used !== undefined && prevent.iidMap !== undefined;
+        if (preventFlag) {
+            const { used, iidMap } = prevent;
+            const usedSpan = {};
+            for (let iid of used) {
+                if (iid in iidMap) {
+                    let span = iidMap[iid];
+                    span.pop();
+                    let key = span.join(",")
+                    //if (key in usedSpan) throw new Error(`Duplicated iid: ${iid}, ${iidMap[iid]}`);
+                    usedSpan[key] = true;
+                }
+            }
+            markUsed(newAst, usedSpan);
+        }
 //        console.timeEnd("parse")
 //        StatCollector.suspendTimer("parse");
 //        StatCollector.resumeTimer("transform");
 //        console.time("transform")
-        addScopes(newAst);
+        addScopes(newAst, preventFlag);
         var len = visitorsPost.length;
         for (var i = 0; i < len; i++) {
-            newAst = astUtil.transformAst(newAst, visitorsPost[i], visitorsPre[i], astUtil.CONTEXT.RHS);
+            newAst = astUtil.transformAst(newAst, visitorsPost[i], visitorsPre[i], astUtil.CONTEXT.RHS, undefined, preventFlag);
         }
 //        console.timeEnd("transform")
 //        StatCollector.suspendTimer("transform");
@@ -1919,6 +2009,7 @@ if (typeof J$ === 'undefined') {
         var aret, skip = false;
         var isEval = options.isEval,
             code = options.code, thisIid = options.thisIid, inlineSource = options.inlineSource, url = options.url;
+        const { used, iidMap } = options;
 
         iidSourceInfo = {};
         initializeIIDCounters(isEval);
@@ -1942,7 +2033,7 @@ if (typeof J$ === 'undefined') {
                 if (Config.ENABLE_SAMPLING) {
                     newAst = transformString(code, [visitorCloneBodyPre, visitorRRPost, visitorOps, visitorMergeBodyPre], [undefined, visitorRRPre, undefined, undefined]);
                 } else {
-                    newAst = transformString(code, [visitorRRPost, visitorOps], [visitorRRPre, undefined]);
+                    newAst = transformString(code, [visitorRRPost, visitorOps], [visitorRRPre, undefined], {used, iidMap});
                 }
                 // post-process AST to hoist function declarations (required for Firefox)
                 var hoistedFcts = [];
@@ -1988,6 +2079,21 @@ if (typeof J$ === 'undefined') {
 
         return {code: instCode, instAST: newAst, sourceMapObject: iidSourceInfo, sourceMapString: prepend};
 
+    }
+
+    function propagateUsed(object) {
+        if ("__used__" in object) return;
+        const children = [];
+        for (key in object) {
+            if (object.hasOwnProperty(key)) {
+                child = object[key];
+                if (typeof child === 'object' && child !== null) {
+                    children.push(child);
+                    propagateUsed(child);
+                }
+            }
+        }
+        if (children.some((child) => "__used__" in child)) object.__used__ = true;
     }
 
     sandbox.instrumentCode = instrumentCode;
