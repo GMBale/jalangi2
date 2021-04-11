@@ -284,7 +284,7 @@ if (typeof J$ === 'undefined') {
 //        StatCollector.suspendTimer("internalParse");
 //        StatCollector.resumeTimer("replace");
         var newAst = astUtil.transformAst(ast, visitorReplaceInExpr, undefined, undefined, true);
-        propagateUsed(newAst);
+        //propagateUsed(newAst);
         //console.log(newAst);
 //        StatCollector.suspendTimer("replace");
         return newAst.body;
@@ -1151,7 +1151,7 @@ if (typeof J$ === 'undefined') {
             }
             if (ast.name === JALANGI_VAR) {
                 return ast;
-            } else if (scope.hasVar(ast.name)) {
+            } else if (scope && scope.hasVar(ast.name)) {
                 ret = wrapRead(ast, createLiteralAst(ast.name), ast, false, false, scope.isGlobal(ast.name));
                 return ret;
             } else if (isTypeof) {
@@ -1178,7 +1178,7 @@ if (typeof J$ === 'undefined') {
             var tmp1 = wrapRHSOfModStore(node.right, tmp0, node.right, node.operator.substring(0, node.operator.length - 1));
 
             var tmp2;
-            if (scope.hasVar(node.left.name)) {
+            if (scope && scope.hasVar(node.left.name)) {
                 tmp2 = wrapWrite(node, createLiteralAst(node.left.name), tmp1, node.left, false, scope.isGlobal(node.left.name), false);
             } else {
                 tmp2 = wrapWriteWithUndefinedCheck(node, createLiteralAst(node.left.name), tmp1, node.left);
@@ -1923,11 +1923,11 @@ if (typeof J$ === 'undefined') {
                 if (object.type === "FunctionDeclaration") {
                     //console.log(children);
                 }
-                if (children.some((child) => "__used__" in child)) object.__used__ = true;
+                //if (children.some((child) => "__used__" in child)) object.__used__ = true;
                 ret = object;
             }
         } else {
-            if (children.some((child) => "__used__" in child)) object.__used__ = true;
+            //if (children.some((child) => "__used__" in child)) object.__used__ = true;
             ret = object;
         }
         return ret;

@@ -551,6 +551,7 @@ if (typeof J$ === 'undefined') {
     // Script enter
     function Se(iid, val, origFileName) {
         createAndAssignNewSid();
+        increase(iid);
         if (sandbox.analysis && sandbox.analysis.scriptEnter) {
             //increase(iid);
             sandbox.analysis.scriptEnter(iid, val, origFileName);
