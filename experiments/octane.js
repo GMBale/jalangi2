@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const checkers = {
-  //"FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js"
-  //"NonContiguousArray": "src/js/sample_analyses/opt/NonContiguousArray.js",
-  //"TypedArray": "src/js/sample_analyses/opt/TypedArray.js",
+  //"FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js",
+  "NonContiguousArray": "src/js/sample_analyses/opt/NonContiguousArray.js",
+  "TypedArray": "src/js/sample_analyses/opt/TypedArray.js",
   "BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
-  //"CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
-  //"UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
-  //"ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
+  "CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
+  "UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
+  "ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
 };
 
 process.chdir(path.join(__dirname, '../'));
@@ -24,8 +24,8 @@ const octaneDir = path.join(__dirname, '../tests/octane/');
 //const files = fs.readFileSync(path.join(octaneDir, 'unitTests.txt')).toString().trim().split("\n");
 const files = [
   //"code-load",
-  //"crypto",
-  "deltablue",
+  "crypto",
+  //"deltablue",
   //"earley-boyer",
   //"gbemu",
   //"navier-stokes",
@@ -49,7 +49,7 @@ for (let f of files) {
     fs.copyFileSync(`counter.json`, path.join(tmpDir, `${f}_${checker}_counter.json`));
     let optDst = path.join(tmpDir, `${f}_${checker}_optimized_.js`);
     //execSync(`node instrument.js ${jalangiDst} ${optDst}`);
-    execSync(`node src/js/commands/esnstrument_cli.js --inlineIID --used used.json --iidMap ${jalangiDst}on --out ${optDst} ${dst}`);
+    console.log(execSync(`node src/js/commands/esnstrument_cli.js --inlineIID --used used.json --iidMap ${jalangiDst}on --out ${optDst} ${dst}`).toString());
   }
   //execSync(`node tmp/${f + '.js'}`);
   //execSync(`node ${file}`);

@@ -481,17 +481,16 @@ if (typeof J$ === 'undefined') {
     function Rt(iid, val) {
         var aret;
         if (sandbox.analysis && sandbox.analysis._return) {
-            //increase(iid);
+            increase(iid);
             aret = sandbox.analysis._return(iid, val);
             if (aret) {
                 val = aret.result;
             }
         } else {
-            //init(iid);
+            init(iid);
         }
         returnStack.pop();
         returnStack.push(val);
-        increase(iid);
         return (lastComputedValue = val);
     }
 
