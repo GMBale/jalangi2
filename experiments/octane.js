@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const checkers = {
-  //"FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js",
+  "FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js"
   //"NonContiguousArray": "src/js/sample_analyses/opt/NonContiguousArray.js",
   //"TypedArray": "src/js/sample_analyses/opt/TypedArray.js",
   //"BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
   //"CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
   //"UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
-  "ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
+  //"ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
 };
 
 process.chdir(path.join(__dirname, '../'));
@@ -42,13 +42,14 @@ for (let f of files) {
   let dst = path.join(tmpDir, f + '.js');
   let jalangiDst = dst.replace('.js', '_jalangi_.js');
   fs.copyFileSync(file, dst);
-  execSync(`node src/js/commands/esnstrument_cli.js ${dst}`);
+  execSync(`node src/js/commands/esnstrument_cli.js --inlineIID ${dst}`);
   for (let checker in checkers) {
     execSync(`node src/js/commands/direct.js --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/sample_analyses/dlint/Utils.js --analysis src/js/sample_analyses/opt/Utils.js --analysis src/js/sample_analyses/opt/RuntimeDB.js --analysis ${checkers[checker]} ${jalangiDst}`);
-    fs.copyFileSync(`unused.json`, path.join(tmpDir, `${f}_${checker}_unused.json`));
+    fs.copyFileSync(`used.json`, path.join(tmpDir, `${f}_${checker}_used.json`));
     fs.copyFileSync(`counter.json`, path.join(tmpDir, `${f}_${checker}_counter.json`));
     let optDst = path.join(tmpDir, `${f}_${checker}_optimized_.js`);
-    execSync(`node instrument.js ${jalangiDst} ${optDst}`);
+    //execSync(`node instrument.js ${jalangiDst} ${optDst}`);
+    execSync(`node src/js/commands/esnstrument_cli.js --inlineIID ${optDst}`);
   }
   //execSync(`node tmp/${f + '.js'}`);
   //execSync(`node ${file}`);
