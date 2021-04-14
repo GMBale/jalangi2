@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const checkers = {
-  "FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js"
+  //"FunCalledWithMoreArguments": "src/js/sample_analyses/dlint/FunCalledWithMoreArguments.js"
   //"NonContiguousArray": "src/js/sample_analyses/opt/NonContiguousArray.js",
   //"TypedArray": "src/js/sample_analyses/opt/TypedArray.js",
-  //"BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
+  "BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
   //"CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
   //"UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
   //"ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
@@ -49,7 +49,7 @@ for (let f of files) {
     fs.copyFileSync(`counter.json`, path.join(tmpDir, `${f}_${checker}_counter.json`));
     let optDst = path.join(tmpDir, `${f}_${checker}_optimized_.js`);
     //execSync(`node instrument.js ${jalangiDst} ${optDst}`);
-    execSync(`node src/js/commands/esnstrument_cli.js --inlineIID ${optDst}`);
+    execSync(`node src/js/commands/esnstrument_cli.js --inlineIID --used used.json --iidMap ${jalangiDst}on --out ${optDst} ${dst}`);
   }
   //execSync(`node tmp/${f + '.js'}`);
   //execSync(`node ${file}`);
