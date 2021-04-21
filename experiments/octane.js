@@ -8,7 +8,7 @@ const checkers = {
   "BranchCoverage": "src/js/sample_analyses/opt/BranchCoverage.js",
   "CountObjectsPerAllocationSite": "src/js/sample_analyses/opt/CountObjectsPerAllocationSite.js",
   "UndefinedOffset": "src/js/sample_analyses/opt/UndefinedOffset.js",
-  "ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js"
+  "ConcatUndefinedToString": "src/js/sample_analyses/opt/ConcatUndefinedToString.js",
 };
 
 process.chdir(path.join(__dirname, '../'));
@@ -24,8 +24,8 @@ const octaneDir = path.join(__dirname, '../tests/octane/');
 //const files = fs.readFileSync(path.join(octaneDir, 'unitTests.txt')).toString().trim().split("\n");
 const files = [
   //"code-load",
-  "crypto",
-  //"deltablue",
+  //"crypto",
+  "deltablue",
   //"earley-boyer",
   //"gbemu",
   //"navier-stokes",
@@ -42,14 +42,13 @@ for (let f of files) {
   let dst = path.join(tmpDir, f + '.js');
   let jalangiDst = dst.replace('.js', '_jalangi_.js');
   fs.copyFileSync(file, dst);
-  execSync(`node src/js/commands/esnstrument_cli.js --inlineIID ${dst}`);
+  execSync(`node src/js/commands/esnstrument_cli.js ${dst}`);
   for (let checker in checkers) {
     execSync(`node src/js/commands/direct.js --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/sample_analyses/dlint/Utils.js --analysis src/js/sample_analyses/opt/Utils.js --analysis src/js/sample_analyses/opt/RuntimeDB.js --analysis ${checkers[checker]} ${jalangiDst}`);
-    fs.copyFileSync(`used.json`, path.join(tmpDir, `${f}_${checker}_used.json`));
+    fs.copyFileSync(`unused.json`, path.join(tmpDir, `${f}_${checker}_unused.json`));
     fs.copyFileSync(`counter.json`, path.join(tmpDir, `${f}_${checker}_counter.json`));
     let optDst = path.join(tmpDir, `${f}_${checker}_optimized_.js`);
-    //execSync(`node instrument.js ${jalangiDst} ${optDst}`);
-    console.log(execSync(`node src/js/commands/esnstrument_cli.js --inlineIID --used used.json --iidMap ${jalangiDst}on --out ${optDst} ${dst}`).toString());
+    execSync(`node instrument.js ${jalangiDst} ${optDst}`);
   }
   //execSync(`node tmp/${f + '.js'}`);
   //execSync(`node ${file}`);

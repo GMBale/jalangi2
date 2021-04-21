@@ -92,9 +92,7 @@ if (typeof J$ === 'undefined') {
                         instCodeFileName: sanitizePath(instname),
                         inlineSourceMap: inlineIID,
                         inlineSource: inlineSource,
-                        url: url,
-                        used,
-                        iidMap
+                        url: url
                     });
 
             } catch (e) {
@@ -126,12 +124,6 @@ if (typeof J$ === 'undefined') {
         parser.addArgument(['--cdn'], {help: "CDN URL from which to serve analysis (rather than inlining)"});
         parser.addArgument(['--astHandlerModule'], {help: "Path to a node module that exports a function to be used for additional AST handling after instrumentation"});
         parser.addArgument(['--htmlVisitorModule'], {help: "Path to a node module that exports a function to be used for HTML handling before instrumentation"});
-        parser.addArgument(['--used'], {
-            help: "JSON file specifying used iids"
-        });
-        parser.addArgument(['--iidMap'], {
-            help: "JSON file mapping iid to span info"
-        });
         parser.addArgument(['--outDir'], {
             help: "Directory containing scripts inlined in html",
             defaultValue: process.cwd()
@@ -176,11 +168,6 @@ if (typeof J$ === 'undefined') {
         inlineSource = args.inlineSource;
         outDir = args.outDir;
         url = args.url;
-        let used, iidMap;
-        if (args.used && args.iidMap) {
-            used = JSON.parse(fs.readFileSync(args.used));
-            iidMap = JSON.parse(fs.readFileSync(args.iidMap));
-        }
 
         var analyses = args.analysis;
         var extraAppScripts = [];
@@ -209,9 +196,7 @@ if (typeof J$ === 'undefined') {
                     instCodeFileName: sanitizePath(instFileName),
                     inlineSourceMap: inlineIID,
                     inlineSource: inlineSource,
-                    url: url,
-                    used,
-                    iidMap
+                    url: url
                 });
             instUtil.applyASTHandler(instCodeAndData, astHandler, sandbox);
             fs.writeFileSync(makeSMapFileName(instFileName), instCodeAndData.sourceMapString, "utf8");

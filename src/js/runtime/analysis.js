@@ -52,10 +52,14 @@ if (typeof J$ === 'undefined') {
     sandbox.counter = {};
 
     function increase(iid) {
-      sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
+      if (iid % 4 === 1) {
+        sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
+      }
     }
     function init(iid) {
-      sandbox.counter[iid] = 0;
+      if (iid % 4 === 1) {
+        sandbox.counter[iid] = 0;
+      }
     }
 
     function getPropSafe(base, prop){
@@ -251,7 +255,7 @@ if (typeof J$ === 'undefined') {
     // Method call (e.g., e.f())
     function M(iid, base, offset, flags) {
         var bFlags = decodeBitPattern(flags, 2); // [isConstructor, isComputed]
-        var f = G(iid + 2, base, offset, createBitPattern(bFlags[1], false, true), true);
+        var f = G(iid + 2, base, offset, createBitPattern(bFlags[1], false, true));
         return function () {
             return (lastComputedValue = invokeFun(iid, base, f, arguments, bFlags[0], true));
         };
@@ -335,7 +339,7 @@ if (typeof J$ === 'undefined') {
     }
 
     // getField (property read)
-    function G(iid, base, offset, flags, implicit) {
+    function G(iid, base, offset, flags) {
         var bFlags = decodeBitPattern(flags, 3); // [isComputed, isOpAssign, isMethodCall]
 
         var aret, skip = false, val;
@@ -358,18 +362,16 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         }
-        if (!implicit) {
-            if ((sandbox.analysis && sandbox.analysis.getFieldPre) || (sandbox.analysis && sandbox.analysis.getField)) {
-                increase(iid);
-            } else {
-                init(iid);
-            }
+        if ((sandbox.analysis && sandbox.analysis.getFieldPre) || (sandbox.analysis && sandbox.analysis.getField)) {
+            increase(iid);
+        } else {
+            init(iid);
         }
         return (lastComputedValue = val);
     }
 
     // putField (property write)
-    function P(iid, base, offset, val, flags, implicit) {
+    function P(iid, base, offset, val, flags) {
         var bFlags = decodeBitPattern(flags, 2); // [isComputed, isOpAssign]
 
         var aret, skip = false;
@@ -393,12 +395,10 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         }
-        if (!implicit) {
-            if ((sandbox.analysis && sandbox.analysis.putFieldPre) || (sandbox.analysis && sandbox.analysis.putField)) {
-                increase(iid);
-            } else {
-                init(iid);
-            }
+        if ((sandbox.analysis && sandbox.analysis.putFieldPre) || (sandbox.analysis && sandbox.analysis.putField)) {
+            increase(iid);
+        } else {
+            init(iid);
         }
         return (lastComputedValue = val);
     }
@@ -481,13 +481,13 @@ if (typeof J$ === 'undefined') {
     function Rt(iid, val) {
         var aret;
         if (sandbox.analysis && sandbox.analysis._return) {
-            increase(iid);
+            //increase(iid);
             aret = sandbox.analysis._return(iid, val);
             if (aret) {
                 val = aret.result;
             }
         } else {
-            init(iid);
+            //init(iid);
         }
         returnStack.pop();
         returnStack.push(val);
@@ -550,7 +550,6 @@ if (typeof J$ === 'undefined') {
     // Script enter
     function Se(iid, val, origFileName) {
         createAndAssignNewSid();
-        increase(iid);
         if (sandbox.analysis && sandbox.analysis.scriptEnter) {
             //increase(iid);
             sandbox.analysis.scriptEnter(iid, val, origFileName);
@@ -587,16 +586,16 @@ if (typeof J$ === 'undefined') {
     function A(iid, base, offset, op, flags) {
         var bFlags = decodeBitPattern(flags, 1); // [isComputed]
         // avoid iid collision: make sure that iid+2 has the same source map as iid (@todo)
-        var oprnd1 = G(iid+2, base, offset, createBitPattern(bFlags[0], true, false), true);
+        var oprnd1 = G(iid+2, base, offset, createBitPattern(bFlags[0], true, false));
         return function (oprnd2) {
             // still possible to get iid collision with a mem operation
-            var val = B(iid, op, oprnd1, oprnd2, createBitPattern(false, true, false), true);
-            return P(iid, base, offset, val, createBitPattern(bFlags[0], true), true);
+            var val = B(iid, op, oprnd1, oprnd2, createBitPattern(false, true, false));
+            return P(iid, base, offset, val, createBitPattern(bFlags[0], true));
         };
     }
 
     // Binary operation
-    function B(iid, op, left, right, flags, implicit) {
+    function B(iid, op, left, right, flags, ignore) {
         var bFlags = decodeBitPattern(flags, 3); // [isComputed, isOpAssign, isSwitchCaseComparison]
         var result, aret, skip = false;
 
@@ -692,7 +691,7 @@ if (typeof J$ === 'undefined') {
             }
         }
 
-        if (!implicit) {
+        if (!ignore) {
             if ((sandbox.analysis && sandbox.analysis.binaryPre) || (sandbox.analysis && sandbox.analysis.binary)) {
                 increase(iid);
             } else {
@@ -782,7 +781,7 @@ if (typeof J$ === 'undefined') {
         var aret, result;
 
         // avoid iid collision; iid may not have a map in the sourcemap
-        result = B(iid+1, "===", switchLeft, right, createBitPattern(false, false, true), true, true);
+        result = B(iid+1, "===", switchLeft, right, createBitPattern(false, false, true), true);
 
         if (sandbox.analysis && sandbox.analysis.conditional) {
             increase(iid);
@@ -847,10 +846,10 @@ if (typeof J$ === 'undefined') {
         const fs = require('fs');
         fs.writeFileSync("counter.json", JSON.stringify(sandbox.counter, null, 2));
         const all = Object.entries(sandbox.counter);
-        const used = all.filter(([k, v]) => v > 0).map(([k, v]) => +k);
+        const used = all.filter(([k, v]) => v > 0);
         const unused = all.filter(([k, v]) => v == 0).map(([k, v]) => +k);
         console.log(`${used.length}/${all.length} (${(used.length/all.length*100).toFixed(2)}%)`);
-        fs.writeFileSync("used.json", JSON.stringify(used, null, 2));
+        fs.writeFileSync("unused.json", JSON.stringify(unused, null, 2));
         if (sandbox.analysis && sandbox.analysis.endExecution) {
             return sandbox.analysis.endExecution();
         }

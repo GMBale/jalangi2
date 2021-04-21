@@ -92,14 +92,12 @@ if (typeof J$ === 'undefined') {
      * @param {boolean?} noIgnore if true, no sub-ast will be ignored.  Otherwise, sub-ASTs will be ignored
      * if ignoreAST() returns true.
      */
-    function transformAst(object, visitorPost, visitorPre, context, noIgnore, prevent) {
+    function transformAst(object, visitorPost, visitorPre, context, noIgnore) {
         var key, child, type, ret, newContext;
 
         type = object.type;
         if (visitorPre && HOP(visitorPre, type)) {
-            if (!prevent || "__used__" in object) {
-                visitorPre[type](object, context);
-            }
+            visitorPre[type](object, context);
         }
 
         for (key in object) {
@@ -144,18 +142,14 @@ if (typeof J$ === 'undefined') {
                             newContext = CONTEXT.RHS;
                     }
                     if (key !== 'bodyOrig') {
-                        object[key] = transformAst(child, visitorPost, visitorPre, newContext, noIgnore, prevent);
+                        object[key] = transformAst(child, visitorPost, visitorPre, newContext, noIgnore);
                     }
                 }
 //            }
         }
 
         if (visitorPost && HOP(visitorPost, type)) {
-            if (!prevent || "__used__" in object) {
-                ret = visitorPost[type](object, context);
-            } else {
-                ret = object;
-            }
+            ret = visitorPost[type](object, context);
         } else {
             ret = object;
         }
@@ -347,7 +341,6 @@ if (typeof J$ === 'undefined') {
     astUtil.CONTEXT = CONTEXT;
     astUtil.transformAst = transformAst;
     astUtil.computeTopLevelExpressions = computeTopLevelExpressions;
-    astUtil.ignoreSubAst = ignoreSubAst;
 })(J$);
 
 // exports J$.astUtil

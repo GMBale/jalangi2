@@ -101,7 +101,6 @@ if (typeof J$ === 'undefined') {
     var logSwitchRightFunName = JALANGI_VAR + ".C2";
     var logLastFunName = JALANGI_VAR + "._";
     var logX1FunName = JALANGI_VAR + ".X1";
-    var lastValueName = JALANGI_VAR + "._lastVal";
 
     var instrumentCodeFunName = JALANGI_VAR + ".instrumentEvalCode";
 
@@ -227,44 +226,41 @@ if (typeof J$ === 'undefined') {
     }
 
 
-    function printLineInfoAux(i, ast, funName) {
+    function printLineInfoAux(i, ast) {
         if (ast && ast.loc) {
-            const ret = [ast.loc.start.line, ast.loc.start.column + 1, ast.loc.end.line, ast.loc.end.column + 1];
-            if(funName) ret.push(funName.substring(funName.indexOf(".") + 1));
-            iidSourceInfo[i] = ret;
+            iidSourceInfo[i] = [ast.loc.start.line, ast.loc.start.column + 1, ast.loc.end.line, ast.loc.end.column + 1];
         }
     }
 
     // iid+2 is usually unallocated
     // we are using iid+2 for the sub-getField operation of a method call
     // see analysis.M
-    function printSpecialIidToLoc(ast0, funName) {
-        printLineInfoAux(memIid + 2, ast0, funName);
+    function printSpecialIidToLoc(ast0) {
+        printLineInfoAux(memIid + 2, ast0);
     }
 
-    function printIidToLoc(ast0, funName) {
-        printLineInfoAux(memIid, ast0, funName);
+    function printIidToLoc(ast0) {
+        printLineInfoAux(memIid, ast0);
     }
 
-    function printModIidToLoc(ast0, funName) {
-        printLineInfoAux(memIid, ast0, funName);
-        printLineInfoAux(memIid+2, ast0, funName);
+    function printModIidToLoc(ast0) {
+        printLineInfoAux(memIid, ast0);
+        printLineInfoAux(memIid+2, ast0);
     }
 
-    function printOpIidToLoc(ast0, funName) {
-        printLineInfoAux(opIid, ast0, funName);
+    function printOpIidToLoc(ast0) {
+        printLineInfoAux(opIid, ast0);
     }
 
-    function printCondIidToLoc(ast0, funName) {
-        printLineInfoAux(condIid, ast0, funName);
+    function printCondIidToLoc(ast0) {
+        printLineInfoAux(condIid, ast0);
     }
 
 // J$_i in expression context will replace it by an AST
 // {J$_i} will replace the body of the block statement with an array of statements passed as argument
 
-    function replaceInStatement(node, code) {
-        var asts = Array.from(arguments);
-        asts.shift();
+    function replaceInStatement(code) {
+        var asts = arguments;
         var visitorReplaceInExpr = {
             'Identifier': function (node) {
                 if (node.name.indexOf(RP) === 0) {
@@ -286,11 +282,6 @@ if (typeof J$ === 'undefined') {
 //        StatCollector.suspendTimer("internalParse");
 //        StatCollector.resumeTimer("replace");
         var newAst = astUtil.transformAst(ast, visitorReplaceInExpr, undefined, undefined, true);
-        const subAsts = Array.from(asts);
-        subAsts[0] = node;
-        if (subAsts.some((child) => child !== null && typeof child === "object" && "__used__" in child)) newAst.body.__used__ = true;
-        //propagateUsed(newAst, new Set());
-        //if ("__used__" in node && !("__used__" in newAst.body)) console.log(newAst.body);
         //console.log(newAst);
 //        StatCollector.suspendTimer("replace");
         return newAst.body;
@@ -298,7 +289,6 @@ if (typeof J$ === 'undefined') {
 
     function replaceInExpr(code) {
         var ret = replaceInStatement.apply(this, arguments);
-        if("__used__" in ret) ret[0].expression.__used__ = true;
         return ret[0].expression;
     }
 
@@ -360,9 +350,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapPutField(node, base, offset, rvalue, isComputed) {
         if (!Config.INSTR_PUTFIELD || Config.INSTR_PUTFIELD(isComputed ? null : offset.value, node)) {
-            printIidToLoc(node, logPutFieldFunName);
+            printIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logPutFieldFunName +
                 "(" + RP + "1, " + RP + "2, " + RP + "3, " + RP + "4," + (createBitPattern(isComputed, false)) + ")",
                 getIid(),
@@ -379,9 +368,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapModAssign(node, base, offset, op, rvalue, isComputed) {
         if (!Config.INSTR_PROPERTY_BINARY_ASSIGNMENT || Config.INSTR_PROPERTY_BINARY_ASSIGNMENT(op, node.computed ? null : offset.value, node)) {
-            printModIidToLoc(node, logAssignFunName);
+            printModIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logAssignFunName + "(" + RP + "1," + RP + "2," + RP + "3," + RP + "4," + (createBitPattern(isComputed)) + ")(" + RP + "5)",
                 getIid(),
                 base,
@@ -397,10 +385,9 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapMethodCall(node, base, offset, isCtor, isComputed) {
-        printIidToLoc(node, logMethodCallFunName);
+        printIidToLoc(node);
         printSpecialIidToLoc(node.callee);
         var ret = replaceInExpr(
-            node,
             logMethodCallFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + (createBitPattern(isCtor, isComputed)) + ")",
             getIid(),
             base,
@@ -411,9 +398,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapFunCall(node, ast, isCtor) {
-        printIidToLoc(node, logFunCallFunName);
+        printIidToLoc(node);
         var ret = replaceInExpr(
-            node,
             logFunCallFunName + "(" + RP + "1, " + RP + "2, " + (createBitPattern(isCtor)) + ")",
             getIid(),
             ast
@@ -424,9 +410,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapGetField(node, base, offset, isComputed) {
         if (!Config.INSTR_GETFIELD || Config.INSTR_GETFIELD(node.computed ? null : offset.value, node)) {
-            printIidToLoc(node, logGetFieldFunName);
+            printIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logGetFieldFunName + "(" + RP + "1, " + RP + "2, " + RP + "3," + (createBitPattern(isComputed,false, false)) + ")",
                 getIid(),
                 base,
@@ -441,9 +426,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapRead(node, name, val, isReUseIid, isGlobal, isScriptLocal) {
         if (!Config.INSTR_READ || Config.INSTR_READ(name, node)) {
-            printIidToLoc(node, logReadFunName);
+            printIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logReadFunName + "(" + RP + "1, " + RP + "2, " + RP + "3," + (createBitPattern(isGlobal,isScriptLocal)) + ")",
                 isReUseIid ? getPrevIidNoInc() : getIid(),
                 name,
@@ -479,7 +463,6 @@ if (typeof J$ === 'undefined') {
         //    );
         //} else {
             ret = replaceInExpr(
-                node,
                 "(" + logIFunName + "(typeof (" + name + ") === 'undefined'? (" + RP + "2) : (" + RP + "3)))",
                 createIdentifierAst(name),
                 wrapRead(node, createLiteralAst(name), createIdentifierAst("undefined"), false, true, false),
@@ -492,9 +475,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapWrite(node, name, val, lhs, isGlobal, isScriptLocal, isDeclaration) {
         if (!Config.INSTR_WRITE || Config.INSTR_WRITE(name, node)) {
-            printIidToLoc(node, logWriteFunName);
+            printIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logWriteFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + RP + "4," + (createBitPattern(isGlobal,isScriptLocal,isDeclaration)) + ")",
                 getIid(),
                 name,
@@ -510,7 +492,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapWriteWithUndefinedCheck(node, name, val, lhs) {
         if (!Config.INSTR_WRITE || Config.INSTR_WRITE(name, node)) {
-            printIidToLoc(node, logWriteFunName);
+            printIidToLoc(node);
 //        var ret2 = replaceInExpr(
 //            "("+logIFunName+"(typeof ("+name+") === 'undefined'? "+RP+"2 : "+RP+"3))",
 //            createIdentifierAst(name),
@@ -518,7 +500,6 @@ if (typeof J$ === 'undefined') {
 //            wrapRead(node, createLiteralAst(name),createIdentifierAst(name), true)
 //        );
             var ret = replaceInExpr(
-                node,
                 logWriteFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + logIFunName + "(typeof(" + lhs.name + ")==='undefined'?undefined:" + lhs.name + ")," + createBitPattern(true, false, false) +")",
                 getIid(),
                 name,
@@ -532,20 +513,20 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapRHSOfModStore(node, left, right, op) {
-        var ret = replaceInExpr(node, RP + "1 " + op + " " + RP + "2",
+        var ret = replaceInExpr(RP + "1 " + op + " " + RP + "2",
             left, right);
         transferLoc(ret, node);
         return ret;
     }
 
     function makeNumber(node, left) {
-        var ret = replaceInExpr(node, " + " + RP + "1 ", left);
+        var ret = replaceInExpr(" + " + RP + "1 ", left);
         transferLoc(ret, node);
         return ret;
     }
 
     function wrapLHSOfModStore(node, left, right) {
-        var ret = replaceInExpr(node, RP + "1 = " + RP + "2",
+        var ret = replaceInExpr(RP + "1 = " + RP + "2",
             left, right);
         transferLoc(ret, node);
         return ret;
@@ -617,7 +598,7 @@ if (typeof J$ === 'undefined') {
 
     function wrapLiteral(node, ast, funId) {
         if (!Config.INSTR_LITERAL || Config.INSTR_LITERAL(getLiteralValue(funId, node), node)) {
-            printIidToLoc(node, logLitFunName);
+            printIidToLoc(node);
             var hasGetterSetter = ifObjectExpressionHasGetterSetter(node);
 
             var ret;
@@ -632,7 +613,6 @@ if (typeof J$ === 'undefined') {
                     internalFunId = getFnIdFromAst(scope.funNodes[node.name]);
                 }
                 ret = replaceInExpr(
-                    node,
                     logLitFunName + "(" + RP + "1, " + RP + "2, " + RP + "3," + hasGetterSetter + ", " + internalFunId + ")",
                     getIid(),
                     ast,
@@ -641,7 +621,6 @@ if (typeof J$ === 'undefined') {
                 );
             } else {
                 ret = replaceInExpr(
-                    node,
                     logLitFunName + "(" + RP + "1, " + RP + "2, " + RP + "3," + hasGetterSetter + ")",
                     getIid(),
                     ast,
@@ -657,12 +636,11 @@ if (typeof J$ === 'undefined') {
 
     function wrapReturn(node, expr) {
         var lid = (expr === null) ? node : expr;
-        printIidToLoc(lid, logReturnFunName);
+        printIidToLoc(lid);
         if (expr === null) {
             expr = createIdentifierAst("undefined");
         }
         var ret = replaceInExpr(
-            node,
             logReturnFunName + "(" + RP + "1, " + RP + "2)",
             getIid(),
             expr
@@ -672,9 +650,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapThrow(node, expr) {
-        printIidToLoc(expr, logThrowFunName);
+        printIidToLoc(expr);
         var ret = replaceInExpr(
-            node,
             logThrowFunName + "(" + RP + "1, " + RP + "2)",
             getIid(),
             expr
@@ -687,9 +664,8 @@ if (typeof J$ === 'undefined') {
         if (!Config.INSTR_END_EXPRESSION || Config.INSTR_END_EXPRESSION(node)) {
 
             if (!ast || ast.type.indexOf("Expression") <= 0) return ast;
-            printIidToLoc(node, logX1FunName);
+            printIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logX1FunName + "(" + RP + "1," + RP + "2)", getIid(), ast);
             transferLoc(ret, node);
             return ret;
@@ -699,9 +675,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapHash(node, ast) {
-        printIidToLoc(node, logHashFunName);
+        printIidToLoc(node);
         var ret = replaceInExpr(
-            node,
             logHashFunName + "(" + RP + "1, " + RP + "2)",
             getIid(),
             ast
@@ -711,9 +686,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function wrapEvalArg(ast) {
-        printIidToLoc(ast, instrumentCodeFunName);
+        printIidToLoc(ast);
         var ret = replaceInExpr(
-            node,
             instrumentCodeFunName + "(" + RP + "1, " + RP + "2, true)",
             ast,
             getIid()
@@ -724,9 +698,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapUnaryOp(node, argument, operator) {
         if (!Config.INSTR_UNARY || Config.INSTR_UNARY(operator, node)) {
-            printOpIidToLoc(node, logUnaryOpFunName);
+            printOpIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logUnaryOpFunName + "(" + RP + "1," + RP + "2," + RP + "3)",
                 getOpIid(),
                 createLiteralAst(operator),
@@ -741,9 +714,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapBinaryOp(node, left, right, operator, isComputed) {
         if (!Config.INSTR_BINARY || Config.INSTR_BINARY(operator, operator)) {
-            printOpIidToLoc(node, logBinaryOpFunName);
+            printOpIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logBinaryOpFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + RP + "4," + (createBitPattern(isComputed, false, false)) + ")",
                 getOpIid(),
                 createLiteralAst(operator),
@@ -759,10 +731,9 @@ if (typeof J$ === 'undefined') {
 
     function wrapLogicalAnd(node, left, right) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("&&", node)) {
-            printCondIidToLoc(node, logConditionalFunName);
+            printCondIidToLoc(node);
             var ret = replaceInExpr(
-                node,
-                "(" + lastValueName + "=" + logConditionalFunName + "(" + RP + "1, " + RP + "2))?" + RP + "3:" + lastValueName,
+                logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + RP + "3:" + logLastFunName + "()",
                 getCondIid(),
                 left,
                 right
@@ -776,10 +747,9 @@ if (typeof J$ === 'undefined') {
 
     function wrapLogicalOr(node, left, right) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("||", node)) {
-            printCondIidToLoc(node, logConditionalFunName);
+            printCondIidToLoc(node);
             var ret = replaceInExpr(
-                node,
-                "(" + lastValueName + "=" + logConditionalFunName + "(" + RP + "1, " + RP + "2))?" + lastValueName + ":" + RP + "3",
+                logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + logLastFunName + "():" + RP + "3",
                 getCondIid(),
                 left,
                 right
@@ -793,9 +763,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapSwitchDiscriminant(node, discriminant) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("switch", node)) {
-            printCondIidToLoc(node, logSwitchLeftFunName);
+            printCondIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logSwitchLeftFunName + "(" + RP + "1, " + RP + "2)",
                 getCondIid(),
                 discriminant
@@ -809,9 +778,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapSwitchTest(node, test) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("switch", node)) {
-            printCondIidToLoc(node, logSwitchRightFunName);
+            printCondIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logSwitchRightFunName + "(" + RP + "1, " + RP + "2)",
                 getCondIid(),
                 test
@@ -825,9 +793,8 @@ if (typeof J$ === 'undefined') {
 
     function wrapWith(node) {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("with", node)) {
-            printIidToLoc(node, logWithFunName);
+            printIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logWithFunName + "(" + RP + "1, " + RP + "2)",
                 getIid(),
                 node
@@ -845,9 +812,8 @@ if (typeof J$ === 'undefined') {
         } // to handle for(;;) ;
 
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("other", node)) {
-            printCondIidToLoc(node, logConditionalFunName);
+            printCondIidToLoc(node);
             var ret = replaceInExpr(
-                node,
                 logConditionalFunName + "(" + RP + "1, " + RP + "2)",
                 getCondIid(),
                 test
@@ -875,7 +841,6 @@ if (typeof J$ === 'undefined') {
     function createExpressionStatement(lhs, node) {
         var ret;
         ret = replaceInStatement(
-            node,
             RP + "1 = " + RP + "2", lhs, node
         );
         transferLoc(ret[0].expression, node);
@@ -883,12 +848,11 @@ if (typeof J$ === 'undefined') {
     }
 
     function createCallInitAsStatement(node, name, val, isArgumentSync, lhs, isCatchParam, isAssign) {
-        printIidToLoc(node, logInitFunName);
+        printIidToLoc(node);
         var ret;
 
         if (isAssign)
             ret = replaceInStatement(
-                node,
                 RP + "1 = " + logInitFunName + "(" + RP + "2, " + RP + "3, " + RP + "4, " + createBitPattern(isArgumentSync, false, isCatchParam) + ")",
                 lhs,
                 getIid(),
@@ -897,7 +861,6 @@ if (typeof J$ === 'undefined') {
             );
         else
             ret = replaceInStatement(
-                node,
                 logInitFunName + "(" + RP + "1, " + RP + "2, " + RP + "3, " + createBitPattern(isArgumentSync, false, isCatchParam) + ")",
                 getIid(),
                 name,
@@ -909,9 +872,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function createCallAsFunEnterStatement(node) {
-        printIidToLoc(node, logFunctionEnterFunName);
+        printIidToLoc(node);
         var ret = replaceInStatement(
-            node,
             logFunctionEnterFunName + "(" + RP + "1,arguments.callee, this, arguments)",
             getIid()
         );
@@ -920,10 +882,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function createCallAsScriptEnterStatement(node) {
-        printIidToLoc(node, logScriptEntryFunName);
-        var ret = replaceInStatement(
-            node,
-            logScriptEntryFunName + "(" + RP + "1," + RP + "2, " + RP + "3)",
+        printIidToLoc(node);
+        var ret = replaceInStatement(logScriptEntryFunName + "(" + RP + "1," + RP + "2, " + RP + "3)",
             getIid(),
             createLiteralAst(instCodeFileName), createLiteralAst(origCodeFileName));
         transferLoc(ret[0].expression, node);
@@ -937,9 +897,9 @@ if (typeof J$ === 'undefined') {
         var tmp, extra, isDeclaration = (left.type === 'VariableDeclaration');
         if (isDeclaration) {
             var name = node.left.declarations[0].id.name;
-            tmp = replaceInExpr(node, name + " = " + logTmpVarName);
+            tmp = replaceInExpr(name + " = " + logTmpVarName);
         } else {
-            tmp = replaceInExpr(node, RP + "1 = " + logTmpVarName, left);
+            tmp = replaceInExpr(RP + "1 = " + logTmpVarName, left);
         }
         transferLoc(tmp, node);
         extra = instrumentStore(tmp, isDeclaration);
@@ -952,10 +912,10 @@ if (typeof J$ === 'undefined') {
             body = [body];
         }
         if (isDeclaration) {
-            ret = replaceInStatement(node,
+            ret = replaceInStatement(
                 "function n() {  for(" + logTmpVarName + " in " + RP + "1) {var " + name + " = " + RP + "2;\n {" + RP + "3}}}", right, wrapWithX1(node, extra.right), body);
         } else {
-            ret = replaceInStatement(node,
+            ret = replaceInStatement(
                 "function n() {  for(" + logTmpVarName + " in " + RP + "1) {" + RP + "2;\n {" + RP + "3}}}", right, wrapWithX1(node, extra), body);
         }
         ret = ret[0].body.body[0];
@@ -965,8 +925,8 @@ if (typeof J$ === 'undefined') {
 
 
     function wrapForInBody(node, body, name) {
-        printIidToLoc(node, logInitFunName);
-        var ret = replaceInStatement(node,
+        printIidToLoc(node);
+        var ret = replaceInStatement(
             "function n() { " + logInitFunName + "(" + RP + "1, '" + name + "'," + name + ","+createBitPattern(false, true, false)+");\n {" + RP + "2}}", getIid(), [body]);
 
         ret = ret[0].body;
@@ -986,11 +946,11 @@ if (typeof J$ === 'undefined') {
 
     function wrapScriptBodyWithTryCatch(node, body) {
         if (!Config.INSTR_TRY_CATCH_ARGUMENTS || Config.INSTR_TRY_CATCH_ARGUMENTS(node)) {
-            printIidToLoc(node, logUncaughtExceptionFunName);
+            printIidToLoc(node);
             var iid1 = getIid();
-            printIidToLoc(node, logScriptExitFunName);
+            printIidToLoc(node);
             var l = labelCounter++;
-            var ret = replaceInStatement(node,
+            var ret = replaceInStatement(
                 "function n() { jalangiLabel" + l + ": while(true) { try {" + RP + "1} catch(" + JALANGI_VAR +
                 "e) { //console.log(" + JALANGI_VAR + "e); console.log(" +
                 JALANGI_VAR + "e.stack);\n  " + logUncaughtExceptionFunName + "(" + RP + "2," + JALANGI_VAR +
@@ -1011,11 +971,11 @@ if (typeof J$ === 'undefined') {
 
     function wrapFunBodyWithTryCatch(node, body) {
         if (!Config.INSTR_TRY_CATCH_ARGUMENTS || Config.INSTR_TRY_CATCH_ARGUMENTS(node)) {
-            printIidToLoc(node, logUncaughtExceptionFunName);
+            printIidToLoc(node);
             var iid1 = getIid();
-            printIidToLoc(node, logFunctionReturnFunName);
+            printIidToLoc(node);
             var l = labelCounter++;
-            var ret = replaceInStatement(node,
+            var ret = replaceInStatement(
                 "function n() { jalangiLabel" + l + ": while(true) { try {" + RP + "1} catch(" + JALANGI_VAR +
                 "e) { //console.log(" + JALANGI_VAR + "e); console.log(" +
                 JALANGI_VAR + "e.stack);\n " + logUncaughtExceptionFunName + "(" + RP + "2," + JALANGI_VAR +
@@ -1188,7 +1148,7 @@ if (typeof J$ === 'undefined') {
             }
             if (ast.name === JALANGI_VAR) {
                 return ast;
-            } else if (scope && scope.hasVar(ast.name)) {
+            } else if (scope.hasVar(ast.name)) {
                 ret = wrapRead(ast, createLiteralAst(ast.name), ast, false, false, scope.isGlobal(ast.name));
                 return ret;
             } else if (isTypeof) {
@@ -1215,7 +1175,7 @@ if (typeof J$ === 'undefined') {
             var tmp1 = wrapRHSOfModStore(node.right, tmp0, node.right, node.operator.substring(0, node.operator.length - 1));
 
             var tmp2;
-            if (scope && scope.hasVar(node.left.name)) {
+            if (scope.hasVar(node.left.name)) {
                 tmp2 = wrapWrite(node, createLiteralAst(node.left.name), tmp1, node.left, false, scope.isGlobal(node.left.name), false);
             } else {
                 tmp2 = wrapWriteWithUndefinedCheck(node, createLiteralAst(node.left.name), tmp1, node.left);
@@ -1270,8 +1230,8 @@ if (typeof J$ === 'undefined') {
     }
 
     function mergeBodies(node) {
-        printIidToLoc(node, logSampleFunName);
-        var ret = replaceInStatement(node,
+        printIidToLoc(node);
+        var ret = replaceInStatement(
             "function n() { if (!" + logSampleFunName + "(" + RP + "1, arguments.callee)){" + RP + "2} else {" + RP + "3}}",
             getIid(),
             node.bodyOrig.body,
@@ -1593,7 +1553,7 @@ if (typeof J$ === 'undefined') {
     };
 
     function funCond(node) {
-        var ret = wrapConditional(node, node.test);
+        var ret = wrapConditional(node.test, node.test);
         node.test = ret;
         node.test = wrapWithX1(node, node.test);
         node.init = wrapWithX1(node, node.init);
@@ -1639,13 +1599,13 @@ if (typeof J$ === 'undefined') {
             return ret;
         },
         "SwitchStatement": function (node) {
-            var dis = wrapSwitchDiscriminant(node, node.discriminant);
-            dis = wrapWithX1(node, dis);
+            var dis = wrapSwitchDiscriminant(node.discriminant, node.discriminant);
+            dis = wrapWithX1(node.discriminant, dis);
             var cases = MAP(node.cases, function (acase) {
                 var test;
                 if (acase.test) {
-                    test = wrapSwitchTest(node, acase.test);
-                    acase.test = wrapWithX1(node, test);
+                    test = wrapSwitchTest(acase.test, acase.test);
+                    acase.test = wrapWithX1(acase.test, test);
                 }
                 return acase;
             });
@@ -1654,7 +1614,7 @@ if (typeof J$ === 'undefined') {
             return node;
         },
         "FunctionExpression": function (node) {
-            //node.body.body = wrapFunBodyWithTryCatch(node, node.body.body);
+            node.body.body = wrapFunBodyWithTryCatch(node, node.body.body);
             return node;
         },
         "FunctionDeclaration": function (node) {
@@ -1672,7 +1632,7 @@ if (typeof J$ === 'undefined') {
         "ForStatement": funCond
     };
 
-    function addScopes(ast, preventFlag) {
+    function addScopes(ast) {
 
         function Scope(parent, isCatch) {
             this.vars = {};
@@ -1832,7 +1792,7 @@ if (typeof J$ === 'undefined') {
             }
 
         };
-        astUtil.transformAst(ast, visitorPost, visitorPre, undefined, undefined, preventFlag);
+        astUtil.transformAst(ast, visitorPost, visitorPre);
     }
 
 
@@ -1895,109 +1855,20 @@ if (typeof J$ === 'undefined') {
     }
 
     // END of Liang Gong's AST post-processor
-    function markUsed(object, usedSpan, context, noIgnore) {
-        var key, child, type, ret, newContext;
-        var children = [];
-        type = object.type;
-        for (key in object) {
-//            if (object.hasOwnProperty(key)) {
-                child = object[key];
-                if (typeof child === 'object' && child !== null && key !== "scope" && (noIgnore || !astUtil.ignoreSubAst(object))) {
-                    if ((type === 'AssignmentExpression' && key === 'left') ||
-                        (type === 'UpdateExpression' && key === 'argument') ||
-                        (type === 'UnaryExpression' && key === 'argument' && object.operator === 'delete') ||
-                        (type === 'ForInStatement' && key === 'left') ||
-                        ((type === 'FunctionExpression' || type === 'FunctionDeclaration') && key === 'id') ||
-                        (type === 'LabeledStatement' && key === 'label') ||
-                        (type === 'BreakStatement' && key === 'label') ||
-                        (type === 'CatchClause' && key === 'param') ||
-                        (type === 'ContinueStatement' && key === 'label') ||
-                        ((type === 'CallExpression' || type === 'NewExpression') &&
-                            key === 'callee' &&
-                            (object.callee.type === 'MemberExpression' ||
-                                (object.callee.type === 'Identifier' && object.callee.name === 'eval'))) ||
-                        (type === 'VariableDeclarator' && key === 'id') ||
-                        (type === 'MemberExpression' && !object.computed && key === 'property')) {
-                        newContext = astUtil.CONTEXT.IGNORE;
-                    } else if (type === 'ObjectExpression' && key === 'properties') {
-                        newContext = astUtil.CONTEXT.OEXP;
-                    } else if ((type === 'FunctionExpression' || type === 'FunctionDeclaration') && key === 'params') {
-                        newContext = astUtil.CONTEXT.PARAMS;
-                    } else if (context === astUtil.CONTEXT.OEXP) {
-                        newContext = astUtil.CONTEXT.OEXP2;
-                    } else if (context === astUtil.CONTEXT.OEXP2 && key === 'key') {
-                        newContext = astUtil.CONTEXT.IGNORE;
-                    } else if (context === astUtil.CONTEXT.PARAMS) {
-                        newContext = astUtil.CONTEXT.IGNORE;
-                    } else if (object.key && key === 'value' && object.kind === 'get') {
-                        newContext = astUtil.CONTEXT.GETTER;
-                    } else if (object.key && key === 'value' && object.kind === 'set') {
-                        newContext = astUtil.CONTEXT.SETTER;
-                    } else if (type === 'CallExpression' && key === 'callee' && child.type === 'Identifier' && child.name === 'eval') {
-                        newContext = astUtil.CONTEXT.IGNORE;
-                    } else if (type === 'UnaryExpression' && key === 'argument' && object.operator === 'typeof' && child.type === 'Identifier') {
-                        newContext = astUtil.CONTEXT.TYPEOF;
-                    } else {
-                        newContext = astUtil.CONTEXT.RHS;
-                    }
-                    if (key !== 'bodyOrig') {
-                        children.push(child);
-                        object[key] = markUsed(child, usedSpan, newContext, noIgnore);
-                    }
-                }
-//            }
-        }
 
-        const { loc } = object;
-        if (loc) {
-            key = [loc.start.line, loc.start.column + 1, loc.end.line, loc.end.column + 1].join(",");
-            if (key in usedSpan) {
-                object.__used__ = true;
-                ret = object;
-            } else {
-                //console.log("-----------------------------------------------------------------------");
-                //console.log(object.type);
-                if (object.type === "FunctionDeclaration") {
-                    //console.log(children);
-                }
-                //if (children.some((child) => "__used__" in child)) object.__used__ = true;
-                ret = object;
-            }
-        } else {
-            //if (children.some((child) => "__used__" in child)) object.__used__ = true;
-            ret = object;
-        }
-        return ret;
-    }
-
-    function transformString(code, visitorsPost, visitorsPre, prevent) {
+    function transformString(code, visitorsPost, visitorsPre) {
 //         StatCollector.resumeTimer("parse");
 //        console.time("parse")
 //        var newAst = esprima.parse(code, {loc:true, range:true});
         var newAst = acorn.parse(code, {locations: true, ecmaVersion: 6 });
-        const preventFlag = prevent.used !== undefined && prevent.iidMap !== undefined;
-        if (preventFlag) {
-            const { used, iidMap } = prevent;
-            const usedSpan = {};
-            for (let iid of used) {
-                if (iid in iidMap) {
-                    let span = iidMap[iid];
-                    span.pop();
-                    let key = span.join(",")
-                    //if (key in usedSpan) throw new Error(`Duplicated iid: ${iid}, ${iidMap[iid]}`);
-                    usedSpan[key] = true;
-                }
-            }
-            markUsed(newAst, usedSpan);
-        }
 //        console.timeEnd("parse")
 //        StatCollector.suspendTimer("parse");
 //        StatCollector.resumeTimer("transform");
 //        console.time("transform")
-        addScopes(newAst, preventFlag);
+        addScopes(newAst);
         var len = visitorsPost.length;
         for (var i = 0; i < len; i++) {
-            newAst = astUtil.transformAst(newAst, visitorsPost[i], visitorsPre[i], astUtil.CONTEXT.RHS, undefined, preventFlag);
+            newAst = astUtil.transformAst(newAst, visitorsPost[i], visitorsPre[i], astUtil.CONTEXT.RHS);
         }
 //        console.timeEnd("transform")
 //        StatCollector.suspendTimer("transform");
@@ -2046,7 +1917,6 @@ if (typeof J$ === 'undefined') {
         var aret, skip = false;
         var isEval = options.isEval,
             code = options.code, thisIid = options.thisIid, inlineSource = options.inlineSource, url = options.url;
-        const { used, iidMap } = options;
 
         iidSourceInfo = {};
         initializeIIDCounters(isEval);
@@ -2070,7 +1940,7 @@ if (typeof J$ === 'undefined') {
                 if (Config.ENABLE_SAMPLING) {
                     newAst = transformString(code, [visitorCloneBodyPre, visitorRRPost, visitorOps, visitorMergeBodyPre], [undefined, visitorRRPre, undefined, undefined]);
                 } else {
-                    newAst = transformString(code, [visitorRRPost, visitorOps], [visitorRRPre, undefined], {used, iidMap});
+                    newAst = transformString(code, [visitorRRPost, visitorOps], [visitorRRPre, undefined]);
                 }
                 // post-process AST to hoist function declarations (required for Firefox)
                 var hoistedFcts = [];
@@ -2116,23 +1986,6 @@ if (typeof J$ === 'undefined') {
 
         return {code: instCode, instAST: newAst, sourceMapObject: iidSourceInfo, sourceMapString: prepend};
 
-    }
-
-    function propagateUsed(object, visited) {
-        if (visited.has(object)) return;
-        visited.add(object);
-        if ("__used__" in object) return;
-        const children = [];
-        for (key in object) {
-            if (object.hasOwnProperty(key)) {
-                child = object[key];
-                if (typeof child === 'object' && child !== null) {
-                    children.push(child);
-                    propagateUsed(child, visited);
-                }
-            }
-        }
-        if (children.some((child) => "__used__" in child)) object.__used__ = true;
     }
 
     sandbox.instrumentCode = instrumentCode;
