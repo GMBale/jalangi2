@@ -101,6 +101,7 @@ if (typeof J$ === 'undefined') {
     var logSwitchRightFunName = JALANGI_VAR + ".C2";
     var logLastFunName = JALANGI_VAR + "._";
     var logX1FunName = JALANGI_VAR + ".X1";
+    var lastValueName = JALANGI_VAR + "._lastVal";
 
     var instrumentCodeFunName = JALANGI_VAR + ".instrumentEvalCode";
 
@@ -733,7 +734,7 @@ if (typeof J$ === 'undefined') {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("&&", node)) {
             printCondIidToLoc(node);
             var ret = replaceInExpr(
-                logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + RP + "3:" + logLastFunName + "()",
+                "(" + lastValueName + "=" + logConditionalFunName + "(" + RP + "1, " + RP + "2))?" + RP + "3:" + lastValueName,
                 getCondIid(),
                 left,
                 right
@@ -749,7 +750,7 @@ if (typeof J$ === 'undefined') {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("||", node)) {
             printCondIidToLoc(node);
             var ret = replaceInExpr(
-                logConditionalFunName + "(" + RP + "1, " + RP + "2)?" + logLastFunName + "():" + RP + "3",
+                "(" + lastValueName + "=" + logConditionalFunName + "(" + RP + "1, " + RP + "2))?" + lastValueName + ":" + RP + "3",
                 getCondIid(),
                 left,
                 right
