@@ -41,9 +41,9 @@ if (typeof J$ === 'undefined') {
     var Function = global.Function;
     var returnStack = [];
     var wrappedExceptionVal;
-    var lastVal;
-    var switchLeft;
-    var switchKeyStack = [];
+    //var lastVal;
+    //var switchLeft;
+    //var switchKeyStack = [];
     var argIndex;
     var EVAL_ORG = eval;
     var lastComputedValue;
@@ -192,7 +192,7 @@ if (typeof J$ === 'undefined') {
 
     function callFun(f, base, args, isConstructor, iid) {
         var result;
-        pushSwitchKey();
+        //pushSwitchKey();
         try {
             if (f === EVAL_ORG) {
                 result = invokeEval(base, f, args, iid);
@@ -205,7 +205,7 @@ if (typeof J$ === 'undefined') {
             }
             return result;
         } finally {
-            popSwitchKey();
+            //popSwitchKey();
         }
     }
 
@@ -756,13 +756,13 @@ if (typeof J$ === 'undefined') {
         return (lastComputedValue = result);
     }
 
-    function pushSwitchKey() {
-        switchKeyStack.push(switchLeft);
-    }
+    //function pushSwitchKey() {
+    //    switchKeyStack.push(switchLeft);
+    //}
 
-    function popSwitchKey() {
-        switchLeft = switchKeyStack.pop();
-    }
+    //function popSwitchKey() {
+    //    switchLeft = switchKeyStack.pop();
+    //}
 
     function last() {
         return (lastComputedValue = lastVal);
@@ -772,7 +772,7 @@ if (typeof J$ === 'undefined') {
     // E.g., for 'switch (x) { ... }',
     // C1 is invoked with value of x
     function C1(iid, left) {
-        switchLeft = left;
+        //switchLeft = left;
         return (lastComputedValue = left);
     }
 
@@ -781,7 +781,7 @@ if (typeof J$ === 'undefined') {
         var aret, result;
 
         // avoid iid collision; iid may not have a map in the sourcemap
-        result = B(iid+1, "===", switchLeft, right, createBitPattern(false, false, true), true);
+        result = B(iid+1, "===", sandbox.switchLeft, right, createBitPattern(false, false, true), true);
 
         if (sandbox.analysis && sandbox.analysis.conditional) {
             increase(iid);
@@ -790,7 +790,7 @@ if (typeof J$ === 'undefined') {
                 if (result && !aret.result) {
                     right = !right;
                 } else if (result && aret.result) {
-                    right = switchLeft;
+                    right = sandbox.switchLeft;
                 }
             }
         } else {
@@ -846,10 +846,10 @@ if (typeof J$ === 'undefined') {
         const fs = require('fs');
         fs.writeFileSync("counter.json", JSON.stringify(sandbox.counter, null, 2));
         const all = Object.entries(sandbox.counter);
-        const used = all.filter(([k, v]) => v > 0);
+        const used = all.filter(([k, v]) => v > 0).map(([k, v]) => +k);
         const unused = all.filter(([k, v]) => v == 0).map(([k, v]) => +k);
         console.log(`${used.length}/${all.length} (${(used.length/all.length*100).toFixed(2)}%)`);
-        fs.writeFileSync("unused.json", JSON.stringify(unused, null, 2));
+        fs.writeFileSync("used.json", JSON.stringify(used, null, 2));
         if (sandbox.analysis && sandbox.analysis.endExecution) {
             return sandbox.analysis.endExecution();
         }

@@ -102,6 +102,7 @@ if (typeof J$ === 'undefined') {
     var logLastFunName = JALANGI_VAR + "._";
     var logX1FunName = JALANGI_VAR + ".X1";
     var lastValueName = JALANGI_VAR + "._lastVal";
+    var switchLeftName = JALANGI_VAR + "._switchLeft";
 
     var instrumentCodeFunName = JALANGI_VAR + ".instrumentEvalCode";
 
@@ -766,7 +767,7 @@ if (typeof J$ === 'undefined') {
         if (!Config.INSTR_CONDITIONAL || Config.INSTR_CONDITIONAL("switch", node)) {
             printCondIidToLoc(node);
             var ret = replaceInExpr(
-                logSwitchLeftFunName + "(" + RP + "1, " + RP + "2)",
+                "(" + switchLeftName + "=" + logSwitchLeftFunName + "(" + RP + "1, " + RP + "2))",
                 getCondIid(),
                 discriminant
             );

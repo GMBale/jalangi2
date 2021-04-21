@@ -9,8 +9,8 @@ const _ = require('lodash');
 const escodegen = require('escodegen');
 
 function oneScript(src) {
-  const unused = JSON.parse(fs.readFileSync(path.join(__dirname, "unused.json")));
-  console.log(unused);
+  const used = JSON.parse(fs.readFileSync(path.join(__dirname, "used.json")));
+  console.log(used);
   const jalangi_src = src.substring(0, src.lastIndexOf(".")) + src.substring(src.lastIndexOf("."));
   const jalangi_code = fs.readFileSync(jalangi_src).toString();
   const jalangi_ast = acorn.parse(jalangi_code);
@@ -29,7 +29,7 @@ function oneScript(src) {
       const name = node.callee.property.name;
       const last = name[name.length - 1];
       const last2 = +name[name.length - 2];
-      if((node.arguments.length > 0 && node.arguments[0].type === "Literal" && unused.includes(node.arguments[0].value)) || (last === "_" && !isNaN(last2))) {
+      if(!(node.arguments.length > 0 && node.arguments[0].type === "Literal" && used.includes(node.arguments[0].value))) {// || (last === "_" && !isNaN(last2))) {
         const methodName = node.callee.property.name;
         const copy = {};
         for (let key in node) {
