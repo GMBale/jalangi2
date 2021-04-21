@@ -52,14 +52,10 @@ if (typeof J$ === 'undefined') {
     sandbox.counter = {};
 
     function increase(iid) {
-      if (iid % 4 === 1) {
-        sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
-      }
+      sandbox.counter[iid] = sandbox.counter[iid] ? sandbox.counter[iid] + 1 : 1;
     }
     function init(iid) {
-      if (iid % 4 === 1) {
-        sandbox.counter[iid] = 0;
-      }
+      sandbox.counter[iid] = 0;
     }
 
     function getPropSafe(base, prop){
@@ -255,7 +251,7 @@ if (typeof J$ === 'undefined') {
     // Method call (e.g., e.f())
     function M(iid, base, offset, flags) {
         var bFlags = decodeBitPattern(flags, 2); // [isConstructor, isComputed]
-        var f = G(iid + 2, base, offset, createBitPattern(bFlags[1], false, true));
+        var f = G(iid + 2, base, offset, createBitPattern(bFlags[1], false, true), true);
         return function () {
             return (lastComputedValue = invokeFun(iid, base, f, arguments, bFlags[0], true));
         };
@@ -339,7 +335,7 @@ if (typeof J$ === 'undefined') {
     }
 
     // getField (property read)
-    function G(iid, base, offset, flags) {
+    function G(iid, base, offset, flags, implicit) {
         var bFlags = decodeBitPattern(flags, 3); // [isComputed, isOpAssign, isMethodCall]
 
         var aret, skip = false, val;
@@ -362,16 +358,18 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         }
-        if ((sandbox.analysis && sandbox.analysis.getFieldPre) || (sandbox.analysis && sandbox.analysis.getField)) {
-            increase(iid);
-        } else {
-            init(iid);
+        if (!implicit) {
+            if ((sandbox.analysis && sandbox.analysis.getFieldPre) || (sandbox.analysis && sandbox.analysis.getField)) {
+                increase(iid);
+            } else {
+                init(iid);
+            }
         }
         return (lastComputedValue = val);
     }
 
     // putField (property write)
-    function P(iid, base, offset, val, flags) {
+    function P(iid, base, offset, val, flags, implicit) {
         var bFlags = decodeBitPattern(flags, 2); // [isComputed, isOpAssign]
 
         var aret, skip = false;
@@ -395,10 +393,12 @@ if (typeof J$ === 'undefined') {
                 val = aret.result;
             }
         }
-        if ((sandbox.analysis && sandbox.analysis.putFieldPre) || (sandbox.analysis && sandbox.analysis.putField)) {
-            increase(iid);
-        } else {
-            init(iid);
+        if (!implicit) {
+            if ((sandbox.analysis && sandbox.analysis.putFieldPre) || (sandbox.analysis && sandbox.analysis.putField)) {
+                increase(iid);
+            } else {
+                init(iid);
+            }
         }
         return (lastComputedValue = val);
     }
@@ -586,16 +586,16 @@ if (typeof J$ === 'undefined') {
     function A(iid, base, offset, op, flags) {
         var bFlags = decodeBitPattern(flags, 1); // [isComputed]
         // avoid iid collision: make sure that iid+2 has the same source map as iid (@todo)
-        var oprnd1 = G(iid+2, base, offset, createBitPattern(bFlags[0], true, false));
+        var oprnd1 = G(iid+2, base, offset, createBitPattern(bFlags[0], true, false), true);
         return function (oprnd2) {
             // still possible to get iid collision with a mem operation
-            var val = B(iid, op, oprnd1, oprnd2, createBitPattern(false, true, false));
-            return P(iid, base, offset, val, createBitPattern(bFlags[0], true));
+            var val = B(iid, op, oprnd1, oprnd2, createBitPattern(false, true, false), true);
+            return P(iid, base, offset, val, createBitPattern(bFlags[0], true), true);
         };
     }
 
     // Binary operation
-    function B(iid, op, left, right, flags, ignore) {
+    function B(iid, op, left, right, flags, implicit) {
         var bFlags = decodeBitPattern(flags, 3); // [isComputed, isOpAssign, isSwitchCaseComparison]
         var result, aret, skip = false;
 
@@ -691,7 +691,7 @@ if (typeof J$ === 'undefined') {
             }
         }
 
-        if (!ignore) {
+        if (!implicit) {
             if ((sandbox.analysis && sandbox.analysis.binaryPre) || (sandbox.analysis && sandbox.analysis.binary)) {
                 increase(iid);
             } else {
